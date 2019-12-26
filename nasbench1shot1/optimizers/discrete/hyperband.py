@@ -7,16 +7,15 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 
 import hpbandster.core.nameserver as hpns
-from hpbandster.optimizers.bohb import BOHB
+from hpbandster.optimizers.hyperband import HyperBand
 from hpbandster.core.worker import Worker
 from nasbench import api
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
+from nasbench1shot1.core.search_spaces import SearchSpace1
+from nasbench1shot1.core.search_spaces import SearchSpace2
+from nasbench1shot1.core.search_spaces import SearchSpace3
+from nasbench1shot1.core.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
 
-from IPython import embed
 
 class MyWorker(Worker):
     def compute(self, config, budget, *args, **kwargs):
@@ -34,16 +33,6 @@ parser.add_argument('--search_space', default=None, type=str, nargs='?',
                     help='specifies the benchmark')
 parser.add_argument('--n_iters', default=280, type=int, nargs='?',
                     help='number of iterations for optimization method')
-parser.add_argument('--strategy', default="sampling", type=str, nargs='?',
-                    help='optimization strategy for the acquisition function')
-parser.add_argument('--min_bandwidth', default=.3, type=float, nargs='?',
-                    help='minimum bandwidth for KDE')
-parser.add_argument('--num_samples', default=64, type=int, nargs='?',
-                    help='number of samples for the acquisition function')
-parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
-                    help='fraction of random configurations')
-parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
-                    help='factor multiplied to the bandwidth')
 parser.add_argument('--output_path', default="./experiments", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--data_dir',
@@ -66,7 +55,7 @@ min_budget = args.min_budget
 max_budget = args.max_budget
 nasbench = api.NASBench(args.data_dir)
 
-output_path = os.path.join(args.output_path, "discrete_optimizers", 'BOHB')
+output_path = os.path.join(args.output_path, "discrete_optimizers", 'HB')
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
 if args.search_space is None:
@@ -74,7 +63,6 @@ if args.search_space is None:
 else:
     spaces = [int(args.search_space)]
 
-#embed()
 
 for space in spaces:
     print('##### Search Space {} #####'.format(space))
@@ -101,27 +89,22 @@ for space in spaces:
         w.run(background=True)
         workers.append(w)
 
-    bohb = BOHB(configspace=cs,
-                run_id=hb_run_id,
-                eta=args.eta,
-                min_budget=min_budget,
-                max_budget=max_budget,
-                nameserver=ns_host,
-                nameserver_port=ns_port,
-                #optimization_strategy=args.strategy,
-                num_samples=args.num_samples,
-                random_fraction=args.random_fraction,
-                bandwidth_factor=args.bandwidth_factor,
-                min_bandwidth=args.min_bandwidth,
-                ping_interval=10)
+    HB = HyperBand(configspace=cs,
+                   run_id=hb_run_id,
+                   eta=args.eta,
+                   min_budget=min_budget,
+                   max_budget=max_budget,
+                   nameserver=ns_host,
+                   nameserver_port=ns_port,
+                   ping_interval=10)
 
-    history = bohb.run(args.n_iters, min_n_workers=num_workers)
+    history = HB.run(args.n_iters, min_n_workers=num_workers)
 
-    bohb.shutdown(shutdown_workers=True)
+    HB.shutdown(shutdown_workers=True)
     NS.shutdown()
 
     fh = open(os.path.join(output_path,
-                           'algo_{}_{}_ssp_{}_seed_{}.obj'.format('BOHB',
+                           'algo_{}_{}_ssp_{}_seed_{}.obj'.format('HB',
                                                                   args.run_id,
                                                                   space,
                                                                   args.seed)), 'wb')
@@ -130,5 +113,3 @@ for space in spaces:
 
     print(min([1 - arch.test_accuracy - search_space.test_min_error for
                arch in search_space.run_history]))
-
-

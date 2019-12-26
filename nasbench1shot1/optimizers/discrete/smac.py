@@ -11,12 +11,10 @@ from smac.scenario.scenario import Scenario
 from smac.tae.execute_func import ExecuteTAFuncDict
 from nasbench import api
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
-
-from IPython import embed
+from nasbench1shot1.core.search_spaces import SearchSpace1
+from nasbench1shot1.core.search_spaces import SearchSpace2
+from nasbench1shot1.core.search_spaces import SearchSpace3
+from nasbench1shot1.core.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
 
 
 parser = argparse.ArgumentParser()
@@ -53,7 +51,6 @@ if args.search_space is None:
 else:
     spaces = [int(args.search_space)]
 
-#embed()
 
 def objective_function(config, **kwargs):
     c = ConfigSpace.Configuration(cs, values=config)

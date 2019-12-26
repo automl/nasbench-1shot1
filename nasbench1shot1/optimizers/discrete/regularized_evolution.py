@@ -24,11 +24,11 @@ import random
 import numpy as np
 from nasbench import api
 
-from optimizers.utils import Model, Architecture
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from nasbench_analysis.utils import upscale_to_nasbench_format, INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
+from nasbench1shot1.core.wrappers import Model, Architecture
+from nasbench1shot1.core.search_spaces import SearchSpace1
+from nasbench1shot1.core.search_spaces import SearchSpace2
+from nasbench1shot1.core.search_spaces import SearchSpace3
+from nasbench1shot1.core.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3, upscale_to_nasbench_format
 
 
 def train_and_eval(config):
