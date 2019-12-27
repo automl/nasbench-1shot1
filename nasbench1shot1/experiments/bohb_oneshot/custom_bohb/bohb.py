@@ -9,7 +9,8 @@ import ConfigSpace as CS
 from hpbandster.core.master import Master
 from hpbandster.optimizers.iterations import SuccessiveHalving
 #from hpbandster.optimizers.config_generators.bohb import BOHB as CG_BOHB
-from custom_bohb.bohb_gen import CG_BOHB_CUSTOM as CG_BOHB
+from nasbench1shot1.experiments.bohb_oneshot.custom_bohb.bohb_gen import CG_BOHB_CUSTOM as CG_BOHB
+
 
 class BOHB(Master):
 	def __init__(self, configspace = None,

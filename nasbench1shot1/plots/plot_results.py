@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.signal import savgol_filter
-
 from scipy import stats
 
-from experiments.analysis.experiment_database import ExperimentDatabase, get_key_from_scalar_configs
+from nasbench1shot1.core.utils import ExperimentDatabase, get_key_from_scalar_configs
+
 
 sns.set_style('whitegrid')
 
@@ -72,7 +72,7 @@ def plot_correlation_for_num_cells_var_channels(single_one_shot_training_databas
     plot_epoch_y_curves_correlation(
         metric_dict=metric_dict,
         ylabel='1 - Correlation (Spearman)', xlabel='Epoch', title=None,
-        foldername='experiments/plot_export',
+        foldername='nasbench101/plots/plot_export',
         filename='correlation_independent_one_shot_cell_{}_var_channels'.format(num_cells),
         x_log=False, y_log=True)
 
@@ -280,7 +280,7 @@ def darts_weight_decay_plot(darts_experiment_database, darts_consistency_experim
                                                                            metric_key),
                          },
             ylabel=metric.y_label, xlabel=metric.x_label, title=None,
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='weight_decay_search_space1_{}'.format(metric_key), x_log=metric.x_log, y_log=metric.y_log)
 
         plot_epoch_twin_y_curves(
@@ -304,7 +304,7 @@ def darts_weight_decay_plot(darts_experiment_database, darts_consistency_experim
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='weight_decay_search_space_{}_twin_x_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -337,7 +337,7 @@ def gdas_weight_decay(darts_experiment_database, darts_consistency_experiment_da
                                                                            metric_key),
                          },
             ylabel=metric.y_label, xlabel=metric.x_label, title=None,
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='gdas_weight_decay_search_space_3_{}'.format(metric_key), x_log=metric.x_log, y_log=metric.y_log)
 
         plot_epoch_twin_y_curves(
@@ -361,7 +361,7 @@ def gdas_weight_decay(darts_experiment_database, darts_consistency_experiment_da
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='gdas_weight_decay_search_space_{}_twin_x_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -394,7 +394,7 @@ def pc_darts_weight_decay(darts_experiment_database, darts_consistency_experimen
                                                                            metric_key),
                          },
             ylabel=metric.y_label, xlabel=metric.x_label, title=None,
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='pc_darts_weight_decay_search_space_{}_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -419,7 +419,7 @@ def pc_darts_weight_decay(darts_experiment_database, darts_consistency_experimen
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='pc_darts_weight_decay_search_space_{}_twin_x_{}'.format(search_space, metric_key),
             x_log=metric.x_log,
             y_log=metric.y_log)
@@ -450,7 +450,7 @@ def pc_darts_learning_rate(darts_experiment_database, darts_consistency_experime
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='pc_darts_learning_rate_search_space_{}_twin_x_{}'.format(search_space, metric_key),
             x_log=metric.x_log,
             y_log=metric.y_log)
@@ -481,7 +481,7 @@ def gdas_learning_rate(darts_experiment_database, darts_consistency_experiment_d
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='gdas_learning_rate_search_space_{}_twin_x_{}'.format(search_space, metric_key),
             x_log=metric.x_log,
             y_log=metric.y_log)
@@ -512,7 +512,7 @@ def darts_learning_rate(darts_experiment_database, darts_consistency_experiment_
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label, ylabel_right='Validation Error (OS)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='darts_learning_rate_search_space_{}_twin_x_{}'.format(search_space, metric_key),
             x_log=metric.x_log,
             y_log=metric.y_log)
@@ -539,7 +539,7 @@ def darts_warm_start_plot(darts_experiment_database, darts_consistency_experimen
                                                                                  'one_shot_validation_errors')},
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='darts_warm_starting_ss_{}_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -567,7 +567,7 @@ def darts_warm_start_cutout_plot(darts_experiment_database, darts_consistency_ex
                                                                                             'one_shot_validation_errors')},
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='darts_warm_starting_cutout_ss_{}_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -592,7 +592,7 @@ def gdas_warm_start_plot(darts_experiment_database, darts_consistency_experiment
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='gdas_comp_ss_{}_warm_start{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -619,7 +619,7 @@ def pc_darts_warm_start_plot(darts_experiment_database, darts_consistency_experi
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='pc_darts_comp_ss_{}_warm_start{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -662,7 +662,7 @@ def pc_darts_cutout_plot(darts_experiment_database, darts_consistency_experiment
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
             ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='pc_darts_comp_ss_{}_cutout_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -691,7 +691,7 @@ def gdas_cutout_plot(darts_experiment_database, darts_consistency_experiment_dat
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
             ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='gdas_comp_ss_{}_cutout_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -705,7 +705,7 @@ def do_plots_for_search_space(search_space_number):
             'DARTS w/o cutout': darts_corr_no_cutout[0]['scalars']['correlation_total'],
         }, ylabel='Spearman Correlation', title='DARTS (first order) w/o cutout', xlabel='Epoch', x_log=False,
         y_log=False,
-        foldername='experiments/plot_export', filename='correlation_ss_{}_darts_w_o_cutout'.format(search_space_number))
+        foldername='nasbench101/plots/plot_export', filename='correlation_ss_{}_darts_w_o_cutout'.format(search_space_number))
 
     pcdarts_corr_no_cutout = pc_darts_database.query_correlation(
         {'search_space': search_space_number, 'cutout': False, 'epochs': 50, 'learning_rate': 0.025})
@@ -713,7 +713,7 @@ def do_plots_for_search_space(search_space_number):
         metric_dict={
             'PC-DARTS': pcdarts_corr_no_cutout[0]['scalars']['correlation_total'],
         }, ylabel='Spearman Correlation', title='PC-DARTS', xlabel='Epoch', x_log=False, y_log=False,
-        foldername='experiments/plot_export', filename='correlation_ss_{}_pc_darts'.format(search_space_number))
+        foldername='nasbench101/plots/plot_export', filename='correlation_ss_{}_pc_darts'.format(search_space_number))
 
     gdas_corr_no_cutout = gdas_experiment_database.query_correlation(
         {'search_space': search_space_number, 'cutout': False})
@@ -721,14 +721,14 @@ def do_plots_for_search_space(search_space_number):
         metric_dict={
             'GDAS': gdas_corr_no_cutout[0]['scalars']['correlation_total'],
         }, ylabel='Spearman Correlation', title='GDAS', xlabel='Epoch', x_log=False, y_log=False,
-        foldername='experiments/plot_export', filename='correlation_ss_{}_gdas'.format(search_space_number))
+        foldername='nasbench101/plots/plot_export', filename='correlation_ss_{}_gdas'.format(search_space_number))
 
     random_ws = random_ws_database.query_correlation({'search_space': search_space_number, 'cutout': False})
     plot_correlation_between_epochs(
         metric_dict={
             'Random WS': random_ws[0]['scalars']['correlation_total'],
         }, ylabel='Spearman Correlation', title='Random WS', xlabel='Epoch', x_log=False, y_log=False, start=10,
-        foldername='experiments/plot_export', filename='correlation_ss_{}_randomws'.format(search_space_number))
+        foldername='nasbench101/plots/plot_export', filename='correlation_ss_{}_randomws'.format(search_space_number))
 
     ## CUTOUT
     pc_darts_cutout_plot(darts_experiment_database=darts_experiment_database,
@@ -773,7 +773,7 @@ def do_plots_for_search_space(search_space_number):
                 'DARTS (second order) w/ cutout': get_key_from_scalar_configs(darts_second_order_cutout,
                                                                               'one_shot_validation_errors')},
             title=None, xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
-            ylabel_right='Validation Error (OS) (-.-)', foldername='experiments/plot_export',
+            ylabel_right='Validation Error (OS) (-.-)', foldername='nasbench101/plots/plot_export',
             filename='second_order_vs_first_order_cutout_no_cutout_ss_{}_{}'.format(search_space_number, metric_key),
             x_log=metric.x_log, y_log=metric.y_log)
 
@@ -848,7 +848,7 @@ def do_plots_for_search_space(search_space_number):
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='optimizer_comparison_ss_{}_50_{}'.format(search_space_number, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -865,7 +865,7 @@ def do_plots_for_search_space(search_space_number):
             metric_dict={
                 'DARTS (first order)': get_key_from_scalar_configs(darts_first_order, metric_key),
                 'DARTS (second order)': get_key_from_scalar_configs(darts_second_order, metric_key),
-            }, title=None, xlabel=metric.x_label, ylabel=metric.y_label, foldername='experiments/plot_export',
+            }, title=None, xlabel=metric.x_label, ylabel=metric.y_label, foldername='nasbench101/plots/plot_export',
             filename='optimizer_comparison_ss_{}_25_{}'.format(search_space_number, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -908,7 +908,7 @@ def do_plots_for_search_space(search_space_number):
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='nasbench101/plots/plot_export',
             filename='optimizer_comparison_ss_{}_100_{}'.format(search_space_number, metric_key),
             x_log=metric.x_log,
             y_log=metric.y_log)
@@ -971,7 +971,7 @@ if __name__ == '__main__':
                      '50 epochs + 6 cells + 16 ch.': extract_correlation_per_epoch(cells_6),
                      '50 epochs + 9 cells + 16 ch.': extract_correlation_per_epoch(baseline_50)},
         ylabel='1 - Correlation (Spearman)', xlabel='Epoch', title=None,
-        foldername='experiments/plot_export', filename='correlation_independent_one_shot_channels', x_log=False,
+        foldername='nasbench101/plots/plot_export', filename='correlation_independent_one_shot_channels', x_log=False,
         y_log=True)
 
     plot_correlation_image(single_one_shot_training_database)

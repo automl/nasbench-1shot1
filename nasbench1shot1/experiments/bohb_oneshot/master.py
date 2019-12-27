@@ -4,15 +4,14 @@ import pickle
 import argparse
 import logging
 
-from darts_worker import darts_base as worker
-from nasbench_analysis.utils import NasbenchWrapper
-
 #from hpbandster.optimizers.bohb import BOHB
-from custom_bohb.bohb import BOHB
-from hpbandster.core.nameserver import NameServer
-#from utils import NameServer
-from hpbandster.utils import *
 import hpbandster.core.result as hputil
+from hpbandster.core.nameserver import NameServer
+from hpbandster.utils import *
+
+from nasbench1shot1.core.wrappers import NasbenchWrapper
+from nasbench1shot1.experiments.bohb_oneshot.custom_bohb.bohb import BOHB
+from nasbench1shot1.experiments.bohb_oneshot.worker import BOHB_Worker
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s',
@@ -55,7 +54,7 @@ args.working_directory = os.path.join(
 )
 
 nasbench = NasbenchWrapper(
-    dataset_file='src/nasbench_analysis/nasbench_data/108_e/nasbench_only108.tfrecord'
+    dataset_file='nasbench1shot1/data/nasbench_data/108_e/nasbench_only108.tfrecord'
 )
 
 if args.array_id == 1:
@@ -67,17 +66,17 @@ if args.array_id == 1:
 
     # BOHB is usually so cheap, that we can 
     # affort to run a worker on the master node, too.
-    worker = worker(min_budget=min_budget,
-                    max_budget=max_budget,
-                    eta=eta,
-                    search_space=args.space,
-                    algorithm=args.algorithm,
-                    nasbench_data=nasbench,
-                    seed=args.seed,
-                    unrolled=args.unrolled,
-                    nameserver=ns_host,
-                    nameserver_port=ns_port,
-                    run_id=args.run_id)
+    worker = BOHB_Worker(min_budget=min_budget,
+                         max_budget=max_budget,
+                         eta=eta,
+                         search_space=args.space,
+                         algorithm=args.algorithm,
+                         nasbench_data=nasbench,
+                         seed=args.seed,
+                         unrolled=args.unrolled,
+                         nameserver=ns_host,
+                         nameserver_port=ns_port,
+                         run_id=args.run_id)
     worker.run(background=True)
 
     #instantiate BOHB and run it
@@ -111,16 +110,16 @@ else:
     time.sleep(30)
     host = nic_name_to_host('eth0')
 
-    worker = worker(min_budget=min_budget,
-                    max_budget=max_budget,
-                    eta=eta,
-                    search_space=args.space,
-                    algorithm=args.algorithm,
-                    nasbench_data=nasbench,
-                    seed=args.seed,
-                    unrolled=args.unrolled,
-                    host=host,
-                    run_id=args.run_id)
+    worker = BOHB_Worker(min_budget=min_budget,
+                         max_budget=max_budget,
+                         eta=eta,
+                         search_space=args.space,
+                         algorithm=args.algorithm,
+                         nasbench_data=nasbench,
+                         seed=args.seed,
+                         unrolled=args.unrolled,
+                         host=host,
+                         run_id=args.run_id)
 
     worker.load_nameserver_credentials(args.working_directory)
     worker.run(background=False)

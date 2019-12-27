@@ -5,11 +5,9 @@ import pickle
 
 import numpy as np
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from nasbench_analysis.utils import NasbenchWrapper
-from optimizers.random_search_with_weight_sharing.darts_wrapper_discrete import DartsWrapper
+from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.core.wrappers import NasbenchWrapper
+from nasbench1shot1.optimizers.oneshot.RS_WS.darts_wrapper_discrete import DartsWrapper
 
 
 def correlation_between_one_shot_nb(model_path, config, epoch):
@@ -95,12 +93,19 @@ def main():
 
 
 parser = argparse.ArgumentParser("correlation_analysis")
-parser.add_argument('--data', type=str, default='../data', help='location of the darts corpus')
-parser.add_argument('--model_path', default="experiments/darts/search_space_1/search-baseline-20190821-171946-0-1",
+parser.add_argument('--data',
+                    type=str,
+                    default='nasbench1shot1/data',
+                    help='location of the darts corpus')
+parser.add_argument('--model_path',
+                    type=str,
+                    default="nasbench1shot1/experiments/darts/search_space_1/search-baseline-20190821-171946-0-1",
                     help='Path to where the models are stored.')
-parser.add_argument('--epoch', type=int, help='Epoch')
+parser.add_argument('--epoch',
+                    type=int,
+                    help='Epoch')
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    nasbench = NasbenchWrapper('nasbench_analysis/nasbench_data/108_e/nasbench_full.tfrecord')
+    nasbench = NasbenchWrapper('nasbench1shot1/data/nasbench_data/108_e/nasbench_full.tfrecord')
     main()
