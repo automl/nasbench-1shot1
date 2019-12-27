@@ -1,7 +1,5 @@
-from optimizers.darts.genotypes import PRIMITIVES
-from optimizers.darts.model_search import Network, Cell, ChoiceBlock, MixedOp
-from optimizers.darts.operations import *
-
+from nasbench1shot1.optimizers.oneshot.base.model_search import Network, MixedOp, ChoiceBlock, Cell
+from nasbench1shot1.optimizers.oneshot.base.operations import *
 
 def channel_shuffle(x, groups):
     """

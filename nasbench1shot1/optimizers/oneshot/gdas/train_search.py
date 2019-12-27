@@ -14,13 +14,12 @@ import torch.nn as nn
 import torch.utils
 import torchvision.datasets as dset
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from optimizers.darts import utils
+from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.optimizers.oneshot.base import utils
 # Use DARTS Architecture optimizer
-from optimizers.gdas.architect import ArchitectGDAS as Architect
-from optimizers.gdas.model_search import GDASNetwork as Network
+from nasbench1shot1.optimizers.oneshot.gdas.architect import ArchitectGDAS as Architect
+from nasbench1shot1.optimizers.oneshot.gdas.model_search import GDASNetwork as Network
+
 
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--data', type=str, default='../data', help='location of the darts corpus')

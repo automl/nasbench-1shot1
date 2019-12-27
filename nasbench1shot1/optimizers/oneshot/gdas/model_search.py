@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 
-from optimizers.darts.model_search import Network, MixedOp, ChoiceBlock, Cell
-from optimizers.darts.operations import *
+from nasbench1shot1.optimizers.oneshot.base.model_search import Network, MixedOp, ChoiceBlock, Cell
+from nasbench1shot1.optimizers.oneshot.base.operations import *
 
 
 class MixedOpGDAS(MixedOp):

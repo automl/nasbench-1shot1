@@ -2,7 +2,7 @@ import torch
 from torch.autograd import Variable
 from torch import autograd
 
-from optimizers.darts.architect import Architect
+from nasbench1shot1.optimizers.oneshot.base.architect import Architect
 
 
 def _concat(xs):

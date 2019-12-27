@@ -10,11 +10,10 @@ import time
 import numpy as np
 import torch
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from optimizers.enas.enas_child import ENASChild
-from optimizers.enas.micro_controller import Controller
+from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.optimizers.oneshot.enas.enas_child import ENASChild
+from nasbench1shot1.optimizers.oneshot.enas.micro_controller import Controller
+
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -35,7 +34,8 @@ class ENAS:
         self.model.save(epoch=epoch)
 
         # Save controller
-        torch.save(self.controller, os.path.join(self.save_dir, 'controller_epoch_{}.pt'.format(epoch)))
+        torch.save(self.controller, os.path.join(self.save_dir,
+                                                 'controller_epoch_{}.pt'.format(epoch)))
 
     def run(self):
         for epoch in range(args.epochs):
@@ -68,7 +68,8 @@ class ENAS:
         sample_vals = sorted(sample_vals, key=lambda x: x[1])
 
         # Save sample validations
-        with open(os.path.join(self.save_dir, 'sample_val_architecture_epoch_{}.obj'.format(epoch)),
+        with open(os.path.join(self.save_dir,
+                               'sample_val_architecture_epoch_{}.obj'.format(epoch)),
                   'wb') as f:
             pickle.dump(sample_vals, f)
 
@@ -91,7 +92,8 @@ class ENAS:
 
         # Save the fully evaluated architectures
         with open(os.path.join(self.save_dir,
-                               'full_val_architecture_epoch_{}.obj'.format(epoch)), 'wb') as f:
+                               'full_val_architecture_epoch_{}.obj'.format(epoch)),
+                  'wb') as f:
             pickle.dump(full_vals, f)
         return best_rounds
 
@@ -101,8 +103,12 @@ def main(args):
     root_dir = os.getcwd()
     print('root_dir', root_dir)
     if args.save_dir is None:
-        save_dir = os.path.join(root_dir, 'experiments/enas/ss_{}_{}_{}'.format(time.strftime("%Y%m%d-%H%M%S"),
-                                                                                args.search_space, args.seed))
+        save_dir = os.path.join(root_dir,
+                                'experiments/enas/ss_{}_{}_{}'.format(
+                                    time.strftime("%Y%m%d-%H%M%S"),
+                                    args.search_space,
+                                    args.seed
+                                ))
     else:
         save_dir = args.save_dir
     if not os.path.exists(save_dir):
@@ -141,14 +147,17 @@ def main(args):
     B = int(args.epochs * data_size / args.batch_size / time_steps)
     if args.benchmark == 'cnn':
         controller = Controller(search_space, args).cuda()
-        model = ENASChild(controller, save_path=save_dir, seed=args.seed, batch_size=args.batch_size,
-                          grad_clip=args.grad_clip, epochs=args.epochs,
+        model = ENASChild(controller, save_path=save_dir, seed=args.seed,
+                          batch_size=args.batch_size, grad_clip=args.grad_clip,
+                          epochs=args.epochs,
                           num_intermediate_nodes=search_space.num_intermediate_nodes,
-                          search_space=search_space, init_channels=args.init_channels, cutout=args.cutout)
+                          search_space=search_space,
+                          init_channels=args.init_channels, cutout=args.cutout)
     else:
         raise ValueError('Benchmarks other cnn on cifar are not available')
 
-    searcher = ENAS(args=args, model=model, controller=controller, seed=args.seed, save_dir=save_dir,
+    searcher = ENAS(args=args, model=model, controller=controller,
+                    seed=args.seed, save_dir=save_dir,
                     search_space=search_space)
 
     if not args.eval_only:

@@ -14,12 +14,11 @@ import torch.nn as nn
 import torch.utils
 import torchvision.datasets as dset
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
-from optimizers.darts import utils
-from optimizers.darts.architect import Architect
-from optimizers.pc_darts.model_search import PCDARTSNetwork as Network
+from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.optimizers.oneshot.base import utils
+from nasbench1shot1.optimizers.oneshot.base.architect import Architect
+from nasbench1shot1.optimizers.oneshot.base.model_search import Network
+
 
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--data', type=str, default='../data', help='location of the darts corpus')
@@ -30,13 +29,13 @@ parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
 parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-parser.add_argument('--epochs', type=int, default=100, help='num of training epochs')
+parser.add_argument('--epochs', type=int, default=50, help='num of training epochs')
 parser.add_argument('--init_channels', type=int, default=16, help='num of init channels')
 parser.add_argument('--layers', type=int, default=9, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
 parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
-parser.add_argument('--cutout_prob', type=float, default=1.0, help='cutout probability')
 parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
+parser.add_argument('--cutout_prob', type=float, default=1.0, help='cutout probability')
 parser.add_argument('--drop_path_prob', type=float, default=0.3, help='drop path probability')
 parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=2, help='random_ws seed')
@@ -51,10 +50,9 @@ parser.add_argument('--warm_start_epochs', type=int, default=0,
                     help='Warm start one-shot model before starting architecture updates.')
 args = parser.parse_args()
 
-args.save = 'experiments/pc_darts/search_space_{}/search-{}-{}-{}-{}-{}'.format(args.search_space, args.save,
-                                                                                      time.strftime("%Y%m%d-%H%M%S"),
-                                                                                      args.seed, args.learning_rate,
-                                                                                      args.search_space)
+args.save = 'experiments/darts/search_space_{}/search-{}-{}-{}-{}'.format(args.search_space, args.save,
+                                                                          time.strftime("%Y%m%d-%H%M%S"), args.seed,
+                                                                          args.search_space)
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 # Dump the config of the run
@@ -136,14 +134,18 @@ def main():
     for epoch in range(args.epochs):
         scheduler.step()
         lr = scheduler.get_lr()[0]
-        logging.info('epoch %d lr %e', epoch, lr)
+        # increase the cutout probability linearly throughout search
+        train_transform.transforms[-1].cutout_prob = args.cutout_prob * epoch / (args.epochs - 1)
+        logging.info('epoch %d lr %e cutout_prob %e', epoch, lr,
+                     train_transform.transforms[-1].cutout_prob)
 
         # Save the one shot model architecture weights for later analysis
-        filehandler = open(os.path.join(args.save, 'one_shot_architecture_{}.obj'.format(epoch)), 'wb')
-        numpy_tensor_list = []
-        for tensor in model.arch_parameters():
-            numpy_tensor_list.append(tensor.detach().cpu().numpy())
-        pickle.dump(numpy_tensor_list, filehandler)
+        arch_filename = os.path.join(args.save, 'one_shot_architecture_{}.obj'.format(epoch))
+        with open(arch_filename, 'wb') as filehandler:
+            numpy_tensor_list = []
+            for tensor in model.arch_parameters():
+                numpy_tensor_list.append(tensor.detach().cpu().numpy())
+            pickle.dump(numpy_tensor_list, filehandler)
 
         # Save the entire one-shot-model
         filepath = os.path.join(args.save, 'one_shot_model_{}.obj'.format(epoch))
@@ -193,7 +195,7 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr, 
         loss = criterion(logits, target)
 
         loss.backward()
-        nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
+        nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         optimizer.step()
 
         prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))

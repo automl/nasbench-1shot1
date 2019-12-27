@@ -7,12 +7,11 @@ import pickle
 import shutil
 import sys
 import time
-
 import numpy as np
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
-from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
+from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.optimizers.oneshot.RS_WS.darts_wrapper_discrete import DartsWrapper
+
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -38,7 +37,8 @@ class Node:
         self.rung = rung
 
     def to_dict(self):
-        out = {'parent': self.parent, 'arch': self.arch, 'node_id': self.node_id, 'rung': self.rung}
+        out = {'parent': self.parent, 'arch': self.arch, 'node_id':
+               self.node_id, 'rung': self.rung}
         if hasattr(self, 'objective_val'):
             out['objective_val'] = self.objective_val
         return out
@@ -59,7 +59,8 @@ class Random_NAS:
 
     def print_summary(self):
         logging.info(self.parents)
-        objective_vals = [(n, self.arms[n].objective_val) for n in self.arms if hasattr(self.arms[n], 'objective_val')]
+        objective_vals = [(n, self.arms[n].objective_val) for n in self.arms if
+                          hasattr(self.arms[n], 'objective_val')]
         objective_vals = sorted(objective_vals, key=lambda x: x[1])
         best_arm = self.arms[objective_vals[0][0]]
         val_ppl = self.model.evaluate(best_arm.arch, split='valid')
@@ -74,10 +75,12 @@ class Random_NAS:
 
     def save(self):
         to_save = {a: self.arms[a].to_dict() for a in self.arms}
-        # Only replace file if save successful so don't lose results of last pickle save
+        # Only replace file if save successful so don't lose results of last
+        # pickle save
         with open(os.path.join(self.save_dir, 'results_tmp.pkl'), 'wb') as f:
             pickle.dump(to_save, f)
-        shutil.copyfile(os.path.join(self.save_dir, 'results_tmp.pkl'), os.path.join(self.save_dir, 'results.pkl'))
+        shutil.copyfile(os.path.join(self.save_dir, 'results_tmp.pkl'),
+                        os.path.join(self.save_dir, 'results.pkl'))
 
         self.model.save(epoch=self.model.epochs)
 
@@ -116,8 +119,14 @@ class Random_NAS:
                 sample_vals.append((arch, ppl))
 
             # Save sample validations
-            with open(os.path.join(self.save_dir,
-                                   'sample_val_architecture_epoch_{}.obj'.format(self.model.epochs)), 'wb') as f:
+            with open(
+                os.path.join(
+                    self.save_dir,
+                    'sample_val_architecture_epoch_{}.obj'.format(
+                        self.model.epochs
+                    )
+                ), 'wb'
+            ) as f:
                 pickle.dump(sample_vals, f)
 
             sample_vals = sorted(sample_vals, key=lambda x: x[1])
@@ -132,15 +141,24 @@ class Random_NAS:
                         ppl = 1000000
                     full_vals.append((arch, ppl))
                 full_vals = sorted(full_vals, key=lambda x: x[1])
-                logging.info('best arch: %s, best arch valid performance: %.3f' % (
-                    ' '.join([str(i) for i in full_vals[0][0]]), full_vals[0][1]))
+                logging.info(
+                    'best arch: %s, best arch valid performance: %.3f' % (
+                        ' '.join([str(i) for i in full_vals[0][0]]), full_vals[0][1]
+                    )
+                )
                 best_rounds.append(full_vals[0])
             else:
                 best_rounds.append(sample_vals[0])
 
             # Save the fully evaluated architectures
-            with open(os.path.join(self.save_dir,
-                                   'full_val_architecture_epoch_{}.obj'.format(self.model.epochs)), 'wb') as f:
+            with open(
+                os.path.join(
+                    self.save_dir,
+                    'full_val_architecture_epoch_{}.obj'.format(
+                        self.model.epochs
+                    )
+                ), 'wb'
+            ) as f:
                 pickle.dump(full_vals, f)
         return best_rounds
 
@@ -150,8 +168,14 @@ def main(args):
     root_dir = os.getcwd()
     print('root_dir', root_dir)
     if args.save_dir is None:
-        save_dir = os.path.join(root_dir, 'experiments/random_ws/ss_{}_{}_{}'.format(time.strftime("%Y%m%d-%H%M%S"),
-                                                                                     args.search_space, args.seed))
+        save_dir = os.path.join(
+            root_dir,
+            'experiments/random_ws/ss_{}_{}_{}'.format(
+                time.strftime("%Y%m%d-%H%M%S"),
+                args.search_space,
+                args.seed
+            )
+        )
     else:
         save_dir = args.save_dir
     if not os.path.exists(save_dir):
@@ -189,10 +213,12 @@ def main(args):
 
     B = int(args.epochs * data_size / args.batch_size / time_steps)
     if args.benchmark == 'cnn':
-        from optimizers.random_search_with_weight_sharing.darts_wrapper_discrete import DartsWrapper
-        model = DartsWrapper(save_dir, args.seed, args.batch_size, args.grad_clip, args.epochs,
-                             num_intermediate_nodes=search_space.num_intermediate_nodes, search_space=search_space,
-                             init_channels=args.init_channels, cutout=args.cutout)
+        model = DartsWrapper(save_dir, args.seed, args.batch_size,
+                             args.grad_clip, args.epochs,
+                             num_intermediate_nodes=search_space.num_intermediate_nodes,
+                             search_space=search_space,
+                             init_channels=args.init_channels,
+                             cutout=args.cutout)
     else:
         raise ValueError('Benchmarks other cnn on cifar are not available')
 

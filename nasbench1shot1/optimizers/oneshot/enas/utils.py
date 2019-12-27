@@ -1,13 +1,11 @@
 import collections
-from collections import defaultdict
-
 import numpy as np
 import torch
 
 Node = collections.namedtuple('Node', ['id', 'name'])
 
 
-class keydefaultdict(defaultdict):
+class keydefaultdict(collections.defaultdict):
     def __missing__(self, key):
         if self.default_factory is None:
             raise KeyError(key)

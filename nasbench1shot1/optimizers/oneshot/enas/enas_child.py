@@ -3,9 +3,9 @@ import logging
 import torch
 from torch import nn
 
-from optimizers.darts import utils
-from optimizers.enas.data import get_loaders
-from optimizers.random_search_with_weight_sharing.darts_wrapper_discrete import DartsWrapper
+from nasbench1shot1.optimizers.oneshot.base import utils
+from nasbench1shot1.optimizers.oneshot.enas.data import get_loaders
+from nasbench1shot1.optimizers.oneshot.RS_WS.darts_wrapper_discrete import DartsWrapper
 
 
 class ENASChild(DartsWrapper):
@@ -18,7 +18,9 @@ class ENASChild(DartsWrapper):
 
         self.controller = controller
 
-        self.train_queue, self.reward_queue, self.valid_queue = get_loaders(self.args)
+        self.train_queue, self.reward_queue, self.valid_queue = get_loaders(
+            self.args
+        )
 
         self.baseline = 0
         self.optimizer = torch.optim.SGD(
@@ -29,7 +31,10 @@ class ENASChild(DartsWrapper):
         )
 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            self.optimizer, float(self.args.epochs), eta_min=self.args.learning_rate_min)
+            self.optimizer,
+            float(self.args.epochs),
+            eta_min=self.args.learning_rate_min
+        )
 
         self.controller_optimizer = torch.optim.Adam(
             controller.parameters(),
@@ -60,7 +65,8 @@ class ENASChild(DartsWrapper):
             logits = self.model(input, discrete=True)
             loss = self.criterion(logits, target)
             loss.backward()
-            nn.utils.clip_grad_norm(self.model.parameters(), self.args.grad_clip)
+            nn.utils.clip_grad_norm(self.model.parameters(),
+                                    self.args.grad_clip)
             self.optimizer.step()
 
             n = input.size(0)
@@ -70,11 +76,16 @@ class ENASChild(DartsWrapper):
             self.top5.update(prec5.data.item(), n)
 
             if step % self.args.report_freq == 0:
-                logging.info('train %03d %e %f %f', step, self.objs.avg, self.top1.avg, self.top5.avg)
+                logging.info('train %03d %e %f %f', step, self.objs.avg,
+                             self.top1.avg, self.top5.avg)
             self.scheduler.step()
 
         valid_err = self.evaluate(arch)
-        logging.info('epoch %d  |  train_acc %f  |  valid_acc %f' % (epoch, self.top1.avg, 1 - valid_err))
+        logging.info(
+            'epoch %d  |  train_acc %f  |  valid_acc %f' % (epoch,
+                                                            self.top1.avg,
+                                                            1 - valid_err)
+        )
         return self.top1.avg
 
     def train_controller(self):
@@ -93,14 +104,15 @@ class ENASChild(DartsWrapper):
             self.controller_optimizer.zero_grad()
 
             self.controller.train()
-            # Sample an architecture from the controller and plug it into the one-shot model.
+            # Sample an architecture from the controller and plug it into the
+            # one-shot model.
             arch, log_prob, entropy = self.controller()
             arch_parameters = self.get_weights_from_arch(arch)
             self.set_arch_model_weights(arch_parameters)
 
             with torch.no_grad():
-                # Make sure that no gradients are propagated through the one-shot model
-                # for the controller updates
+                # Make sure that no gradients are propagated through the
+                # one-shot model for the controller updates
                 logits = self.model(input, discrete=True).detach()
                 reward = utils.accuracy(logits, target)[0]
 
@@ -110,7 +122,8 @@ class ENASChild(DartsWrapper):
             log_prob = torch.sum(log_prob)
             if self.baseline is None:
                 self.baseline = reward
-            self.baseline = self.args.bl_dec * self.baseline + (1 - self.args.bl_dec) * reward
+            self.baseline = self.args.bl_dec * self.baseline + (1 -
+                                                                self.args.bl_dec) * reward
 
             loss = log_prob * (reward - self.baseline)
             loss = loss.mean()
@@ -124,7 +137,8 @@ class ENASChild(DartsWrapper):
             total_entropy.update(entropy.item(), n)
 
             if step % self.args.report_freq == 0:
-                logging.info('controller %03d %e %f %f', step, total_loss.avg, total_reward.avg, self.baseline.item())
+                logging.info('controller %03d %e %f %f', step, total_loss.avg,
+                             total_reward.avg, self.baseline.item())
 
     def evaluate_sampled_architecture(self):
         arch, log_prob, entropy = self.controller()
@@ -164,6 +178,7 @@ class ENASChild(DartsWrapper):
             top5.update(prec5.data.item(), n)
 
             if step % self.args.report_freq == 0:
-                logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+                logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg,
+                             top5.avg)
 
         return 1 - 0.01 * top1.avg

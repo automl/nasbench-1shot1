@@ -5,9 +5,9 @@
 #SBATCH -c 2 # number of cores
 #SBATCH -a 1-12 # array size
 #SBATCH --gres=gpu:1  # reserves four GPUs
-#SBATCH -D /home/siemsj/projects/darts_weight_sharing_analysis # Change working_dir
-#SBATCH -o log/log_$USER_%Y-%m-%d.out # STDOUT  (the folder log has to be created prior to running or this won't work)
-#SBATCH -e log/err_$USER_%Y-%m-%d.err # STDERR  (the folder log has to be created prior to running or this won't work)
+#SBATCH -D .
+#SBATCH -o experiments/cluster_logs/log_$USER_%Y-%m-%d.out # STDOUT  (the folder log has to be created prior to running or this won't work)
+#SBATCH -e experiments/cluster_logs/err_$USER_%Y-%m-%d.err # STDERR  (the folder log has to be created prior to running or this won't work)
 #SBATCH -J DARTS_NASBENCH # sets the job name. If not specified, the file name will be used as job name
 # #SBATCH --mail-type=END,FAIL # (recive mails about end and timeouts/crashes of your job)
 # Print some information about the job to STDOUT
@@ -25,7 +25,7 @@ for seed in {1..12}
     do
         # Job to perform
         if [ $gpu_counter -eq $SLURM_ARRAY_TASK_ID ]; then
-           PYTHONPATH=$PWD python optimizers/darts/train_search.py --seed=${seed} --save=baseline --search_space=1 --epochs=25
+           PYTHONPATH=$PWD python optimizers/oneshot/darts/train_search.py --seed=${seed} --save=baseline --search_space=1 --epochs=25
            exit $?
         fi
 

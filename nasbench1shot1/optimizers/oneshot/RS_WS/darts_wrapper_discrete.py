@@ -11,11 +11,9 @@ import torch.nn as nn
 import torchvision.datasets as dset
 from torch.autograd import Variable
 
-from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
-from optimizers.darts import utils
-from optimizers.darts.genotypes import PRIMITIVES
-# from optimizers.pc_darts.model_search import PCDARTSNetwork as Network
-from optimizers.darts.model_search import Network
+from nasbench1shot1.optimizers.oneshot.base import utils
+from nasbench1shot1.optimizers.oneshot.base.operations import PRIMITIVES
+from nasbench1shot1.optimizers.oneshot.base.model_search import Network
 
 
 class AttrDict(dict):
@@ -301,7 +299,7 @@ class DartsWrapper:
             alphas_output[0][idx] = label
 
         # Initialize the weights for the inputs to each choice block.
-        if type(self.model.search_space) == SearchSpace1:
+        if str(self.model.search_space) == 'SearchSpace1':
             begin = 3
         else:
             begin = 2

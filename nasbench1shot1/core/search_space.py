@@ -27,6 +27,9 @@ class SearchSpace:
 
         self.run_history = []
 
+    def __str__(self):
+        return 'SearchSpace{}'.format(self.search_space_number)
+
     @abstractmethod
     def create_nasbench_adjacency_matrix(self, parents, **kwargs):
         """Based on given connectivity pattern create the corresponding adjacency matrix."""

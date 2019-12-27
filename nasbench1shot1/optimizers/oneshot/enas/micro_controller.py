@@ -3,10 +3,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from optimizers.darts.genotypes import PRIMITIVES
+from nasbench1shot1.optimizers.oneshot.base.operations import PRIMITIVES
 
 """
-Implementation done by MengTianjian reimplementation by https://github.com/MengTianjian/enas-pytorch/blob/master/micro_controller.py
+Implementation done by MengTianjian reimplementation by
+https://github.com/MengTianjian/enas-pytorch/blob/master/micro_controller.py
+
 Modified by Julien Siems
 """
 
@@ -33,9 +35,12 @@ class Controller(torch.nn.Module):
         b_soft = torch.zeros(1, self.child_num_ops)
         b_soft[:, 0:2] = 10
         self.b_soft = nn.Parameter(b_soft)
-        b_soft_no_learn = np.array([0.25, 0.25] + [-0.25] * (self.child_num_ops - 2))
+        b_soft_no_learn = np.array([0.25, 0.25] + [-0.25] * (self.child_num_ops
+                                                             - 2))
         b_soft_no_learn = np.reshape(b_soft_no_learn, [1, self.child_num_ops])
-        self.b_soft_no_learn = torch.Tensor(b_soft_no_learn).requires_grad_(False).cuda()
+        self.b_soft_no_learn = torch.Tensor(
+            b_soft_no_learn
+        ).requires_grad_(False).cuda()
         # attention
         self.w_attn_1 = nn.Linear(self.lstm_size, self.lstm_size, bias=False)
         self.w_attn_2 = nn.Linear(self.lstm_size, self.lstm_size, bias=False)
@@ -48,7 +53,9 @@ class Controller(torch.nn.Module):
                 nn.init.uniform_(param, -0.1, 0.1)
 
     def forward(self):
-        arc_seq_1, entropy_1, log_prob_1, c, h = self.run_sampler(use_bias=True)
+        arc_seq_1, entropy_1, log_prob_1, c, h = self.run_sampler(
+            use_bias=True
+        )
         sample_arc = arc_seq_1
         sample_entropy = entropy_1
         sample_log_prob = log_prob_1
@@ -99,19 +106,25 @@ class Controller(torch.nn.Module):
                 logits = self.tanh_constant * torch.tanh(logits)
             prob = F.softmax(logits, dim=-1)
 
-            # Sample the required number of parents from the multinomial distribution
-            indices = prob.multinomial(num_samples=self.search_space.num_parents_per_node[str(layer_id)],
-                                       replacement=False)
+            # Sample the required number of parents from the multinomial
+            # distribution
+            indices = prob.multinomial(
+                num_samples=self.search_space.num_parents_per_node[str(layer_id)],
+                replacement=False
+            )
             for parent in indices.cpu().numpy()[0]:
                 adjacency_matrix[parent, layer_id] = 1
 
             curr_log_prob = []
             for i in range(indices.size()[1]):
-                curr_log_prob.append(F.cross_entropy(logits, indices[0, i].view(1)))
+                curr_log_prob.append(F.cross_entropy(logits, indices[0,
+                                                                     i].view(1)))
 
             log_prob.append(sum(curr_log_prob) / len(curr_log_prob))
 
-            curr_ent = -torch.mean(torch.sum(torch.mul(F.log_softmax(logits, dim=-1), prob), dim=1)).detach()
+            curr_ent = -torch.mean(torch.sum(torch.mul(F.log_softmax(logits,
+                                                                     dim=-1),
+                                                       prob), dim=1)).detach()
 
             entropy.append(curr_ent)
 
@@ -119,7 +132,8 @@ class Controller(torch.nn.Module):
                 prev_layers.append(anchors[indices[0, i].view(1)])
             inputs = prev_layers[-1].view(1, -1).requires_grad_()
 
-            # # 2. Sample the operation to be applied to the parents of the choice block
+            # # 2. Sample the operation to be applied to the parents of the
+            # choice block
             embed = inputs
             next_h, next_c = self.lstm(embed, (prev_h, prev_c))
             prev_c, prev_h = next_c, next_h
@@ -137,7 +151,9 @@ class Controller(torch.nn.Module):
 
             curr_log_prob = F.cross_entropy(logits, op_id)
             log_prob.append(curr_log_prob)
-            curr_ent = -torch.mean(torch.sum(torch.mul(F.log_softmax(logits, dim=-1), prob), dim=1)).detach()
+            curr_ent = -torch.mean(torch.sum(torch.mul(F.log_softmax(logits,
+                                                                     dim=-1),
+                                                       prob), dim=1)).detach()
             entropy.append(curr_ent)
             inputs = self.encoder(op_id + 1)
 
