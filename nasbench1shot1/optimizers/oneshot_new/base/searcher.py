@@ -16,44 +16,15 @@ from nasbench1shot1.optimizers.oneshot.base.operations import PRIMITIVES
 from nasbench1shot1.optimizers.oneshot.base.model_search import Network
 
 
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+class OneShotModelWrapper(object):
+    def __init__(self, args, search_space, resume_epoch=None):
+        """Wrapper class for the one-shot model instantiation, training and evaluation.
+        :args: arguments
+        :search_space: SearchSpace object
+        """
 
-
-class DartsWrapper:
-    def __init__(self, save_path, seed, batch_size, grad_clip, epochs,
-                 num_intermediate_nodes, search_space, cutout,
-                 resume_iter=None, init_channels=16):
-        args = {}
-        args['data'] = '../data'
-        args['epochs'] = epochs
-        args['learning_rate'] = 0.025
-        args['batch_size'] = batch_size
-        args['learning_rate_min'] = 0.001
-        args['momentum'] = 0.9
-        args['weight_decay'] = 3e-4
-        args['init_channels'] = init_channels
-        # Adapted to nasbench
-        args['layers'] = 9
-        args['drop_path_prob'] = 0.3
-        args['grad_clip'] = grad_clip
-        args['train_portion'] = 0.5
-        args['seed'] = seed
-        args['log_interval'] = 50
-        args['save'] = save_path
-        args['gpu'] = 0
-        args['cuda'] = True
-        args['cutout'] = cutout
-        args['cutout_length'] = 16
-        args['report_freq'] = 50
-        args['output_weights'] = True
-        args['steps'] = num_intermediate_nodes
-        args['search_space'] = search_space.search_space_number
-        self.search_space = search_space
-        args = AttrDict(args)
         self.args = args
+        self.search_space = search_space
 
         # Dump the config of the run, but if only if it doesn't yet exist
         config_path = os.path.join(args.save, 'config.json')
@@ -100,7 +71,7 @@ class DartsWrapper:
         self.criterion = criterion
 
         model = Network(args.init_channels, 10, args.layers, self.criterion, output_weights=args.output_weights,
-                        search_space=search_space, steps=args.steps)
+                        search_space=search_space, steps=search_space.num_intermediate_nodes)
 
         model = model.cuda()
         self.model = model
@@ -117,14 +88,14 @@ class DartsWrapper:
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, float(args.epochs), eta_min=args.learning_rate_min)
 
-        if resume_iter is not None:
-            self.steps = resume_iter
-            self.epochs = int(resume_iter / len(self.train_queue))
-            logging.info("Resuming from epoch %d" % self.epochs)
+        #TODO: add option to load checkpoint
+        if resume_epoch is not None:
+            self.epoch = int(resume_epoch)
+            logging.info("Resuming from epoch %d" % self.epoch)
             self.objs = utils.AvgrageMeter()
             self.top1 = utils.AvgrageMeter()
             self.top5 = utils.AvgrageMeter()
-            for i in range(self.epochs):
+            for i in range(self.epoch):
                 self.scheduler.step()
 
         size = 0
@@ -136,81 +107,63 @@ class DartsWrapper:
         logging.info('Args: {}'.format(args))
         logging.info('Model total parameters: {}'.format(total_params))
 
-    def train_batch(self, arch):
-        args = self.args
-        if self.steps % len(self.train_queue) == 0:
-            self.scheduler.step()
-            self.objs = utils.AvgrageMeter()
-            self.top1 = utils.AvgrageMeter()
-            self.top5 = utils.AvgrageMeter()
-        lr = self.scheduler.get_lr()[0]
-
-        weights = self.get_weights_from_arch(arch)
-        self.set_arch_model_weights(weights)
-
-        step = self.steps % len(self.train_queue)
-        input, target = next(self.train_iter)
-
-        self.model.train()
-        n = input.size(0)
-
-        input = input.cuda()
-        target = target.cuda(non_blocking=True)
-
-        # get a random_ws minibatch from the search queue with replacement
-        self.optimizer.zero_grad()
-        logits = self.model(input, discrete=True)
-        loss = self.criterion(logits, target)
-
-        loss.backward()
-        nn.utils.clip_grad_norm(self.model.parameters(), args.grad_clip)
-        self.optimizer.step()
-
-        prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-        self.objs.update(loss.data.item(), n)
-        self.top1.update(prec1.data.item(), n)
-        self.top5.update(prec5.data.item(), n)
-
-        if step % args.report_freq == 0:
-            logging.info('train %03d %e %f %f', step, self.objs.avg, self.top1.avg, self.top5.avg)
-
-        self.steps += 1
-        if self.steps % len(self.train_queue) == 0:
-            # Save the model weights
-            self.epochs += 1
-            self.train_iter = iter(self.train_queue)
-            valid_err = self.evaluate(arch)
-            logging.info('epoch %d  |  train_acc %f  |  valid_acc %f' % (self.epochs, self.top1.avg, 1 - valid_err))
-            self.save(epoch=self.epochs)
-
-    def evaluate(self, arch, split=None):
-        # Return error since we want to minimize obj val
-        logging.info(arch)
+    def train(self, epoch, lr, architect=None):
         objs = utils.AvgrageMeter()
         top1 = utils.AvgrageMeter()
         top5 = utils.AvgrageMeter()
 
-        weights = self.get_weights_from_arch(arch)
-        self.set_arch_model_weights(weights)
+        for step, (input, target) in enumerate(self.train_queue):
+            self.model.train()
+            n = input.size(0)
 
-        self.model.eval()
-
-        if split is None:
-            n_batches = 10
-        else:
-            n_batches = len(self.valid_queue)
-
-        for step in range(n_batches):
-            try:
-                input, target = next(self.valid_iter)
-            except Exception as e:
-                logging.info('looping back over valid set')
-                self.valid_iter = iter(self.valid_queue)
-                input, target = next(self.valid_iter)
             input = input.cuda()
             target = target.cuda(non_blocking=True)
 
-            logits = self.model(input, discrete=True)
+            # get a minibatch from the search queue with replacement
+            try:
+                input_search, target_search = next(self.valid_iter)
+            except:
+                self.valid_iter = iter(self.valid_queue)
+                input_search, target_search = next(self.valid_iter)
+
+            input_search = input_search.cuda()
+            target_search = target_search.cuda(non_blocking=True)
+
+            # Allow for warm starting of the one-shot model for more reliable architecture updates.
+            if architect is not None:
+                if epoch >= self.args.warm_start_epochs:
+                    architect.step(input, target, input_search, target_search, lr, self.optimizer, unrolled=args.unrolled)
+
+            self.optimizer.zero_grad()
+            logits = self.model(input)
+            loss = self.criterion(logits, target)
+
+            loss.backward()
+            nn.utils.clip_grad_norm_(self.model.parameters(), self.args.grad_clip)
+            self.optimizer.step()
+
+            prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+            objs.update(loss.data.item(), n)
+            top1.update(prec1.data.item(), n)
+            top5.update(prec5.data.item(), n)
+
+            if step % self.args.report_freq == 0:
+                logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+
+        return top1.avg, objs.avg
+
+
+    def infer(self, epoch, discrete=False):
+        objs = utils.AvgrageMeter()
+        top1 = utils.AvgrageMeter()
+        top5 = utils.AvgrageMeter()
+        self.model.eval()
+
+        for step, (input, target) in enumerate(self.valid_queue):
+            input = input.cuda()
+            target = target.cuda(non_blocking=True)
+
+            logits = self.model(input, discrete=discrete)
             loss = self.criterion(logits, target)
 
             prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
@@ -222,7 +175,7 @@ class DartsWrapper:
             if step % self.args.report_freq == 0:
                 logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
 
-        return 1 - 0.01 * top1.avg
+        return top1.avg, objs.avg
 
 
     def save(self, epoch):

@@ -205,22 +205,16 @@ def main(args):
     else:
         raise ValueError('Unknown search space')
 
-    if args.benchmark == 'ptb':
-        raise ValueError('PTB not supported.')
-    else:
-        data_size = 25000
-        time_steps = 1
+    data_size = 25000
+    time_steps = 1
 
     B = int(args.epochs * data_size / args.batch_size / time_steps)
-    if args.benchmark == 'cnn':
-        model = DartsWrapper(save_dir, args.seed, args.batch_size,
-                             args.grad_clip, args.epochs,
-                             num_intermediate_nodes=search_space.num_intermediate_nodes,
-                             search_space=search_space,
-                             init_channels=args.init_channels,
-                             cutout=args.cutout)
-    else:
-        raise ValueError('Benchmarks other cnn on cifar are not available')
+    model = DartsWrapper(save_dir, args.seed, args.batch_size,
+                         args.grad_clip, args.epochs,
+                         num_intermediate_nodes=search_space.num_intermediate_nodes,
+                         search_space=search_space,
+                         init_channels=args.init_channels,
+                         cutout=args.cutout)
 
     searcher = Random_NAS(B, model, args.seed, save_dir)
     logging.info('budget: %d' % (searcher.B))
@@ -230,16 +224,17 @@ def main(args):
     else:
         np.random.seed(args.seed + 1)
         archs = searcher.get_eval_arch(2)
+
     logging.info(archs)
     arch = ' '.join([str(a) for a in archs[0][0]])
     with open('/tmp/arch', 'w') as f:
         f.write(arch)
+
     return arch
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Args for SHA with weight sharing')
-    parser.add_argument('--benchmark', dest='benchmark', type=str, default='cnn')
     parser.add_argument('--seed', dest='seed', type=int, default=100)
     parser.add_argument('--epochs', dest='epochs', type=int, default=50)
     parser.add_argument('--batch_size', dest='batch_size', type=int, default=64)
