@@ -1,16 +1,11 @@
-import argparse
 import inspect
-import json
 import logging
 import os
 import pickle
 import shutil
-import sys
 import time
-import numpy as np
 
-from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
-from nasbench1shot1.optimizers.oneshot.RS_WS.darts_wrapper_discrete import DartsWrapper
+from nasbench1shot1.optimizers.oneshot.RS_WS.searcher import RandomNASWrapper
 
 
 for handler in logging.root.handlers[:]:
@@ -44,18 +39,20 @@ class Node:
         return out
 
 
-class Random_NAS:
-    def __init__(self, B, model, seed, save_dir):
+class RandomNAS(object):
+    def __init__(self, args, search_space, save_dir):
         self.save_dir = save_dir
 
-        self.B = B
-        self.model = model
-        self.seed = seed
+        self.B =  int(args.epochs * args.data_size / args.batch_size /
+                      args.time_steps)
+        self.model = RandomNASWrapper(args, search_space)
+        self.seed = args.seed
 
         self.iters = 0
 
         self.arms = {}
         self.node_id = 0
+
 
     def print_summary(self):
         logging.info(self.parents)
@@ -162,90 +159,3 @@ class Random_NAS:
                 pickle.dump(full_vals, f)
         return best_rounds
 
-
-def main(args):
-    # Fill in with root output path
-    root_dir = os.getcwd()
-    print('root_dir', root_dir)
-    if args.save_dir is None:
-        save_dir = os.path.join(
-            root_dir,
-            'experiments/random_ws/ss_{}_{}_{}'.format(
-                time.strftime("%Y%m%d-%H%M%S"),
-                args.search_space,
-                args.seed
-            )
-        )
-    else:
-        save_dir = args.save_dir
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    if args.eval_only:
-        assert args.save_dir is not None
-
-    # Dump the config of the run folder
-    with open(os.path.join(save_dir, 'config.json'), 'w') as fp:
-        json.dump(args.__dict__, fp)
-
-    log_format = '%(asctime)s %(message)s'
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-                        format=log_format, datefmt='%m/%d %I:%M:%S %p')
-    fh = logging.FileHandler(os.path.join(save_dir, 'log.txt'))
-    fh.setFormatter(logging.Formatter(log_format))
-    logging.getLogger().addHandler(fh)
-
-    logging.info(args)
-
-    if args.search_space == '1':
-        search_space = SearchSpace1()
-    elif args.search_space == '2':
-        search_space = SearchSpace2()
-    elif args.search_space == '3':
-        search_space = SearchSpace3()
-    else:
-        raise ValueError('Unknown search space')
-
-    data_size = 25000
-    time_steps = 1
-
-    B = int(args.epochs * data_size / args.batch_size / time_steps)
-    model = DartsWrapper(save_dir, args.seed, args.batch_size,
-                         args.grad_clip, args.epochs,
-                         num_intermediate_nodes=search_space.num_intermediate_nodes,
-                         search_space=search_space,
-                         init_channels=args.init_channels,
-                         cutout=args.cutout)
-
-    searcher = Random_NAS(B, model, args.seed, save_dir)
-    logging.info('budget: %d' % (searcher.B))
-    if not args.eval_only:
-        searcher.run()
-        archs = searcher.get_eval_arch()
-    else:
-        np.random.seed(args.seed + 1)
-        archs = searcher.get_eval_arch(2)
-
-    logging.info(archs)
-    arch = ' '.join([str(a) for a in archs[0][0]])
-    with open('/tmp/arch', 'w') as f:
-        f.write(arch)
-
-    return arch
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Args for SHA with weight sharing')
-    parser.add_argument('--seed', dest='seed', type=int, default=100)
-    parser.add_argument('--epochs', dest='epochs', type=int, default=50)
-    parser.add_argument('--batch_size', dest='batch_size', type=int, default=64)
-    parser.add_argument('--grad_clip', dest='grad_clip', type=float, default=0.25)
-    parser.add_argument('--save_dir', dest='save_dir', type=str, default=None)
-    parser.add_argument('--eval_only', dest='eval_only', type=int, default=0)
-    # CIFAR-10 only argument.  Use either 16 or 24 for the settings for random_ws search
-    # with weight-sharing used in our experiments.
-    parser.add_argument('--init_channels', dest='init_channels', type=int, default=16)
-    parser.add_argument('--search_space', choices=['1', '2', '3'], default='1')
-    parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
-    args = parser.parse_args()
-
-    main(args)
