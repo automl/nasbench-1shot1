@@ -219,6 +219,12 @@ def read_in_correlation(path, config):
         )
 
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 class ExperimentDatabase:
     def __init__(self, root_dir):
         """Load all directories with trainings."""
