@@ -38,6 +38,44 @@ def extract_correlation_per_epoch(config):
     return spearman_r
 
 
+def plot_for_inductive_bias(inductive_bias_database):
+    archs_validation_performance_min = []
+    archs_validation_performance_mean = []
+
+    nb_validation_performance = []
+    for arch_idx in range(1, 30):
+        config = inductive_bias_database.query({'arch_idx': arch_idx})
+        print(arch_idx, get_key_from_scalar_configs(config, 'one_shot_validation_errors').shape)
+        archs_validation_performance_min.append(
+            np.max(get_key_from_scalar_configs(config, 'one_shot_validation_errors'), axis=0))
+        archs_validation_performance_mean.append(
+            np.mean(get_key_from_scalar_configs(config, 'one_shot_validation_errors'), axis=0))
+        nb_validation_performance.append(get_key_from_scalar_configs(config, 'validation_errors')[0])
+
+    archs_validation_performance_min = np.array(archs_validation_performance_min)
+    archs_validation_performance_mean = np.array(archs_validation_performance_mean)
+
+    nb_validation_performance = np.array(nb_validation_performance)
+
+    spearman_r_min = []
+    for os_error, nb_error in zip(archs_validation_performance_min.T, nb_validation_performance.T):
+        spearman_r_min.append(stats.spearmanr(os_error, nb_error).correlation)
+
+    spearman_r_mean = []
+    for os_error, nb_error in zip(archs_validation_performance_mean.T, nb_validation_performance.T):
+        spearman_r_mean.append(stats.spearmanr(os_error, nb_error).correlation)
+
+    metric_dict = {}
+    metric_dict['Min validation error'] = spearman_r_min
+    metric_dict['Mean validation error'] = spearman_r_mean
+    plot_epoch_y_curves_correlation(
+        metric_dict=metric_dict,
+        ylabel='Spearman', xlabel='Epoch', title=None,
+        foldername='experiments/plot_export',
+        filename='correlation_architecture_inductive_bias',
+        x_log=False, y_log=False)
+
+
 def plot_correlation_image(single_one_shot_training_database, epoch_idx=-1):
     correlation_matrix = np.zeros((3, 5))
     for idx_cell, num_cells in enumerate([3, 6, 9]):
@@ -59,7 +97,7 @@ def plot_correlation_image(single_one_shot_training_database, epoch_idx=-1):
     return correlation_matrix
 
 
-def plot_correlation_for_num_cells_var_channels(single_one_shot_training_database, num_cells):
+def plot_correlation_for_num_cells_var_channels(single_one_shot_training_database, num_cells, config_name):
     metric_dict = {}
     for num_channels in [2, 4, 8, 16, 36]:
         config = single_one_shot_training_database.query(
@@ -73,7 +111,7 @@ def plot_correlation_for_num_cells_var_channels(single_one_shot_training_databas
         metric_dict=metric_dict,
         ylabel='1 - Correlation (Spearman)', xlabel='Epoch', title=None,
         foldername='experiments/plot_export',
-        filename='correlation_independent_one_shot_cell_{}_var_channels'.format(num_cells),
+        filename='correlation_{}_one_shot_cell_{}_var_channels'.format(config_name, num_cells),
         x_log=False, y_log=True)
 
 
@@ -175,7 +213,7 @@ def plot_correlation_between_epochs(metric_dict, title, xlabel, ylabel, folderna
 
 def plot_epoch_twin_y_curves(metric_dict_left, metric_dict_right, title, xlabel, ylabel_left, ylabel_right, foldername,
                              x_log, y_log, smoothing=False, filename=None, max_iter=None):
-    fig, ax_left = plt.subplots()
+    fig, ax_left = plt.subplots(figsize=(5, 4))
     ax_left.set_ylabel(ylabel_left)
     for config, values in metric_dict_left.items():
         if smoothing:
@@ -624,8 +662,7 @@ def pc_darts_warm_start_plot(darts_experiment_database, darts_consistency_experi
             y_log=metric.y_log)
 
 
-def pc_darts_cutout_plot(darts_experiment_database, darts_consistency_experiment_database,
-                         gdas_experiment_database,
+def pc_darts_cutout_plot(darts_experiment_database, darts_consistency_experiment_database, gdas_experiment_database,
                          pc_darts_database, random_ws_database, metric_dict, search_space):
     pc_darts_no_cutout = pc_darts_database.query(
         {'search_space': search_space, 'cutout': False, 'unrolled': False, 'epochs': 100, 'weight_decay': 0.0003,
@@ -662,7 +699,7 @@ def pc_darts_cutout_plot(darts_experiment_database, darts_consistency_experiment
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
             ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='experiments_2/plot_export',
             filename='pc_darts_comp_ss_{}_cutout_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
@@ -691,13 +728,14 @@ def gdas_cutout_plot(darts_experiment_database, darts_consistency_experiment_dat
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
             ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='experiments_2/plot_export',
             filename='gdas_comp_ss_{}_cutout_{}'.format(search_space, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
 
 
 def do_plots_for_search_space(search_space_number):
     # Correlation Plot
+    '''
     darts_corr_no_cutout = darts_experiment_database.query_correlation(
         {'search_space': search_space_number, 'cutout': False, 'epochs': 50, 'learning_rate': 0.025})
     plot_correlation_between_epochs(
@@ -729,18 +767,18 @@ def do_plots_for_search_space(search_space_number):
             'Random WS': random_ws[0]['scalars']['correlation_total'],
         }, ylabel='Spearman Correlation', title='Random WS', xlabel='Epoch', x_log=False, y_log=False, start=10,
         foldername='experiments/plot_export', filename='correlation_ss_{}_randomws'.format(search_space_number))
-
+    '''
     ## CUTOUT
     pc_darts_cutout_plot(darts_experiment_database=darts_experiment_database,
                          darts_consistency_experiment_database=darts_consistency_experiment_database,
                          gdas_experiment_database=gdas_experiment_database, random_ws_database=random_ws_database,
                          metric_dict=metric_dict, pc_darts_database=pc_darts_database, search_space=search_space_number)
-
+    '''
     gdas_cutout_plot(darts_experiment_database=darts_experiment_database,
                      darts_consistency_experiment_database=darts_consistency_experiment_database,
                      gdas_experiment_database=gdas_experiment_database, random_ws_database=random_ws_database,
                      metric_dict=metric_dict, pc_darts_database=pc_darts_database, search_space=search_space_number)
-
+    '''
     # DARTS Cutout comparison
     darts_first_order = darts_experiment_database.query(
         {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 100, 'weight_decay': 0.0003,
@@ -773,10 +811,10 @@ def do_plots_for_search_space(search_space_number):
                 'DARTS (second order) w/ cutout': get_key_from_scalar_configs(darts_second_order_cutout,
                                                                               'one_shot_validation_errors')},
             title=None, xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
-            ylabel_right='Validation Error (OS) (-.-)', foldername='experiments/plot_export',
+            ylabel_right='Validation Error (OS) (-.-)', foldername='experiments_2/plot_export',
             filename='second_order_vs_first_order_cutout_no_cutout_ss_{}_{}'.format(search_space_number, metric_key),
             x_log=metric.x_log, y_log=metric.y_log)
-
+    '''
     ## WEIGHT DECAY
     darts_weight_decay_plot(darts_experiment_database=darts_experiment_database,
                             darts_consistency_experiment_database=None,
@@ -809,7 +847,7 @@ def do_plots_for_search_space(search_space_number):
                         gdas_experiment_database=gdas_experiment_database, random_ws_database=random_ws_database,
                         metric_dict=metric_dict, pc_darts_database=pc_darts_database,
                         search_space=search_space_number)
-
+    '''
     ## OPTIMIZER COMPARISON
     darts_first_order = darts_experiment_database.query(
         {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 50, 'weight_decay': 0.0003,
@@ -818,9 +856,9 @@ def do_plots_for_search_space(search_space_number):
         {'unrolled': True, 'cutout': False, 'search_space': search_space_number, 'epochs': 50, 'weight_decay': 0.0003,
          'warm_start_epochs': 0, 'learning_rate': 0.025})
     random_ws = random_ws_database.query({'search_space': search_space_number, 'epochs': 50})
-    gdas_no_cutout = gdas_experiment_database.query(
-        {'search_space': search_space_number, 'cutout': False, 'unrolled': False, 'epochs': 50, 'weight_decay': 0.0003,
-         'warm_start_epochs': 0, 'learning_rate': 0.025})
+    gdas_no_cutout = None  # gdas_experiment_database.query(
+    # {'search_space': search_space_number, 'cutout': False, 'unrolled': False, 'epochs': 50, 'weight_decay': 0.0003,
+    # 'warm_start_epochs': 0, 'learning_rate': 0.025})
     pc_darts = pc_darts_database.query(
         {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 50, 'weight_decay': 0.0003,
          'warm_start_epochs': 0, 'learning_rate': 0.025})
@@ -832,26 +870,26 @@ def do_plots_for_search_space(search_space_number):
         plot_epoch_twin_y_curves(
             metric_dict_left={
                 'DARTS (first order)': get_key_from_scalar_configs(darts_first_order, metric_key),
-                'DARTS (second order)': get_key_from_scalar_configs(darts_second_order, metric_key),
-                'GDAS': get_key_from_scalar_configs(gdas_no_cutout, metric_key),
+                # 'DARTS (second order)': get_key_from_scalar_configs(darts_second_order, metric_key),
+                # 'GDAS': get_key_from_scalar_configs(gdas_no_cutout, metric_key),
                 'PC-DARTS': get_key_from_scalar_configs(pc_darts, metric_key),
                 'ENAS': get_key_from_scalar_configs(enas, metric_key),
                 'Random WS': get_key_from_scalar_configs(random_ws, metric_key),
             },
             metric_dict_right={
                 'DARTS (first order)': get_key_from_scalar_configs(darts_first_order, 'one_shot_validation_errors'),
-                'DARTS (second order)': get_key_from_scalar_configs(darts_second_order, 'one_shot_validation_errors'),
-                'GDAS': get_key_from_scalar_configs(gdas_no_cutout, 'one_shot_validation_errors'),
+                # 'DARTS (second order)': get_key_from_scalar_configs(darts_second_order, 'one_shot_validation_errors'),
+                # 'GDAS': get_key_from_scalar_configs(gdas_no_cutout, 'one_shot_validation_errors'),
                 'PC-DARTS': get_key_from_scalar_configs(pc_darts, 'one_shot_validation_errors'),
                 'ENAS': get_key_from_scalar_configs(enas, 'one_shot_validation_errors'),
                 'Random WS': get_key_from_scalar_configs(random_ws, 'one_shot_validation_errors'),
             },
             title=None,
             xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)', ylabel_right='Validation Error (OS) (-.-)',
-            foldername='experiments/plot_export',
+            foldername='experiments_2/plot_export',
             filename='optimizer_comparison_ss_{}_50_{}'.format(search_space_number, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
-
+    '''
     ## OPTIMIZER COMPARISON
     darts_first_order = darts_experiment_database.query(
         {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 25, 'weight_decay': 0.0003,
@@ -868,7 +906,7 @@ def do_plots_for_search_space(search_space_number):
             }, title=None, xlabel=metric.x_label, ylabel=metric.y_label, foldername='experiments/plot_export',
             filename='optimizer_comparison_ss_{}_25_{}'.format(search_space_number, metric_key), x_log=metric.x_log,
             y_log=metric.y_log)
-
+    '''
     ## OPTIMIZER COMPARISON
     darts_first_order = darts_experiment_database.query(
         {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 100,
@@ -915,50 +953,12 @@ def do_plots_for_search_space(search_space_number):
 
 
 def main():
-    do_plots_for_search_space('1')
-    do_plots_for_search_space('2')
+    # do_plots_for_search_space('1')
+    # do_plots_for_search_space('2')
     do_plots_for_search_space('3')
 
 
 if __name__ == '__main__':
-    inductive_bias = ExperimentDatabase(root_dir=os.path.join('experiments', 'inductive_bias'))
-    plot_correlation_for_num_cells_var_channels(inductive_bias, num_cells=9)
-
-    single_one_shot_training_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'independent_training'))
-    # Perform the independent training analysis for search space 3
-    baseline_50 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 16,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 9})
-    cell_9_8 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 8,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 9})
-    cell_9_2 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 2,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 9})
-    baseline_100 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 100, 'init_channels': 16,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 9})
-    cells_6 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 16,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 6})
-    cells_3 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 16,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 3})
-    cells_3_ch_8 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 8,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 3})
-    cells_3_ch_2 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 2,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 3})
-    cells_3_36 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 36,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 3})
-    cells_3_100 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 100, 'init_channels': 16,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 3})
-    init_channels_36 = single_one_shot_training_database.query(
-        {'unrolled': False, 'cutout': False, 'search_space': '3', 'epochs': 50, 'init_channels': 36,
-         'weight_decay': 0.0003, 'warm_start_epochs': 0, 'learning_rate': 0.025, 'layers': 9})
     metric_dict = {
         'validation_errors': Metric(x_label='Epoch', y_label='Validation Regret (NB)', x_log=False, y_log=True),
         'test_errors': Metric(x_label='Epoch', y_label='Test Regret (NB)', x_log=False, y_log=True),
@@ -966,24 +966,43 @@ if __name__ == '__main__':
         'one_shot_training_errors': Metric(x_label='Epoch', y_label='Training Error (OS)', x_log=False, y_log=True)
     }
 
-    plot_epoch_y_curves_correlation(
-        metric_dict={'50 epochs + 3 cells + 16 ch.': extract_correlation_per_epoch(cells_3),
-                     '50 epochs + 6 cells + 16 ch.': extract_correlation_per_epoch(cells_6),
-                     '50 epochs + 9 cells + 16 ch.': extract_correlation_per_epoch(baseline_50)},
-        ylabel='1 - Correlation (Spearman)', xlabel='Epoch', title=None,
-        foldername='experiments/plot_export', filename='correlation_independent_one_shot_channels', x_log=False,
-        y_log=True)
-
-    plot_correlation_image(single_one_shot_training_database)
-    plot_correlation_for_num_cells_var_channels(single_one_shot_training_database, num_cells=3)
-    plot_correlation_for_num_cells_var_channels(single_one_shot_training_database, num_cells=6)
-    plot_correlation_for_num_cells_var_channels(single_one_shot_training_database, num_cells=9)
-
-    darts_experiment_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'darts'))
+    darts_experiment_database = ExperimentDatabase(root_dir=os.path.join('experiments_2', 'darts'))
+    search_space_number = '3'
+    '''
+    # DARTS Cutout comparison
+    darts_first_order = darts_experiment_database.query(
+        {'unrolled': False, 'cutout': False, 'search_space': search_space_number, 'epochs': 100, 'weight_decay': 0.0003,
+         'warm_start_epochs': 0, 'learning_rate': 0.025})
+    darts_first_order_cutout = darts_experiment_database.query(
+        {'unrolled': False, 'cutout': True, 'search_space': search_space_number, 'epochs': 100, 'weight_decay': 0.0003,
+         'warm_start_epochs': 0, 'learning_rate': 0.025})
+    darts_second_order = darts_experiment_database.query(
+        {'unrolled': True, 'cutout': False, 'search_space': search_space_number, 'epochs': 50, 'weight_decay': 0.0003,
+         'warm_start_epochs': 0, 'learning_rate': 0.025})
+    darts_second_order_cutout = darts_experiment_database.query(
+        {'unrolled': True, 'cutout': True, 'search_space': search_space_number, 'epochs': 50, 'weight_decay': 0.0003,
+         'warm_start_epochs': 0, 'learning_rate': 0.025})
+    for metric_key, metric in metric_dict.items():
+        plot_epoch_twin_y_curves(
+            metric_dict_left={
+                'DARTS (first order) w/o cutout': get_key_from_scalar_configs(darts_first_order, metric_key),
+                'DARTS (first order) w/ cutout': get_key_from_scalar_configs(darts_first_order_cutout, metric_key),
+            },
+            metric_dict_right={
+                'DARTS (first order) w/o cutout': get_key_from_scalar_configs(darts_first_order,
+                                                                              'one_shot_validation_errors'),
+                'DARTS (first order) w/ cutout': get_key_from_scalar_configs(darts_first_order_cutout,
+                                                                             'one_shot_validation_errors'),
+            },
+            title=None, xlabel=metric.x_label, ylabel_left=metric.y_label + ' (-)',
+            ylabel_right='Validation Error (OS) (-.-)', foldername='experiments/plot_export',
+            filename='second_order_vs_first_order_cutout_no_cutout_ss_{}_{}'.format(search_space_number, metric_key),
+            x_log=metric.x_log, y_log=metric.y_log)
+    '''
     darts_consistency_experiment_database = None
-    gdas_experiment_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'gdas'))
-    pc_darts_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'pc_darts'))
-    random_ws_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'random_ws'))
-    enas_database = ExperimentDatabase(root_dir=os.path.join('experiments', 'enas'))
+    gdas_experiment_database = ExperimentDatabase(root_dir=os.path.join('experiments_2', 'gdas'))
+    pc_darts_database = ExperimentDatabase(root_dir=os.path.join('experiments_2', 'pc_darts'))
+    random_ws_database = ExperimentDatabase(root_dir=os.path.join('experiments_2', 'random_ws'))
+    enas_database = ExperimentDatabase(root_dir=os.path.join('experiments_2', 'enas'))
 
     main()

@@ -3,6 +3,8 @@ import os
 import json
 
 from hpbandster.core.base_iteration import  Datum
+
+
 class Run(object):
 	"""
 		Not a proper class, more a 'struct' to bundle important

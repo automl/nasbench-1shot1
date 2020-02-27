@@ -6,8 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from IPython import embed
 
-from optimizers.utils_1 import Model_1, Architecture_1
-from optimizers.utils import Model, Architecture
 
 colors={
         'BOHB-PC-DARTS': 'darkorange',

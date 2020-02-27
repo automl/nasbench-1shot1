@@ -51,7 +51,7 @@ parser.add_argument('--arch_learning_rate', type=float, default=3e-4, help='lear
 parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weight decay for arch encoding')
 parser.add_argument('--arch_idx', type=int, help='weight decay for arch encoding')
 parser.add_argument('--output_weights', type=bool, default=True, help='Whether to use weights on the output nodes')
-parser.add_argument('--search_space', choices=['1', '2', '3'], default='1')
+parser.add_argument('--search_space', choices=['1', '2', '3'], default='3')
 parser.add_argument('--debug', action='store_true', default=False, help='run only for some batches')
 parser.add_argument('--warm_start_epochs', type=int, default=0,
                     help='Warm start one-shot model before starting architecture updates.')
@@ -143,7 +143,7 @@ def main():
     architect = Architect(model, args)
     # Read a random sample of architectures
     archs = pickle.load(open(
-        '/home/siemsj/projects/darts_weight_sharing_analysis/nasbench_analysis/architecture_inductive_bias/sampled_architectures_from_search_space_3.obj',
+        '/home/siemsj/projects/darts_weight_sharing_analysis/nasbench_analysis/architecture_inductive_bias/sampled_architectures.obj',
         'rb'))
     arch = archs[args.arch_idx]
     arch_parameters = get_weights_from_arch(arch, model)

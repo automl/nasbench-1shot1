@@ -37,7 +37,7 @@ def get_directory_list(path):
     return directory_list
 
 
-def eval_one_shot_model(config, model):
+def eval_one_shot_model(config, model, nasbench):
     model_list = pickle.load(open(model, 'rb'))
 
     alphas_mixed_op = model_list[0]
@@ -114,7 +114,7 @@ def eval_one_shot_model(config, model):
     return test_error, valid_error, runtime, params
 
 
-def eval_directory(path):
+def eval_directory(path, nasbench):
     """Evaluates all one-shot architecture methods in the directory."""
     # Read in config
     with open(os.path.join(path, 'config.json')) as fp:
@@ -127,7 +127,8 @@ def eval_directory(path):
     test_errors = []
     valid_errors = []
     for model in one_shot_architectures:
-        test, valid, _, _ = eval_one_shot_model(config=config, model=model)
+        test, valid, _, _ = eval_one_shot_model(config=config, model=model,
+                                                nasbench=nasbench)
         test_errors.append(test)
         valid_errors.append(valid)
 
@@ -138,12 +139,12 @@ def eval_directory(path):
         pickle.dump(test_errors, fp)
 
 
-def main():
-    directories = get_directory_list("experiments/inductive_bias/")
+def main(nasbench):
+    directories = get_directory_list("experiments_2/random_ws/")
     directories.sort(key=natural_keys)
     for directory in directories:
         try:
-            eval_directory(directory)
+            eval_directory(directory, nasbench)
         except Exception as e:
             print('error', e, directory)
 
@@ -151,4 +152,4 @@ def main():
 if __name__ == '__main__':
     nasbench = NasbenchWrapper(
         dataset_file='/home/siemsj/projects/darts_weight_sharing_analysis/nasbench_analysis/nasbench_data/108_e/nasbench_full.tfrecord')
-    main()
+    main(nasbench=nasbench)
