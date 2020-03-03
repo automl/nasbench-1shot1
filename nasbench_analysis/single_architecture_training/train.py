@@ -55,7 +55,7 @@ parser.add_argument('--warm_start_epochs', type=int, default=0,
                     help='Warm start one-shot model before starting architecture updates.')
 args = parser.parse_args()
 
-args.save = 'experiments/independent_training/search_space_{}/search-{}-{}-{}-{}'.format(args.search_space,
+args.save = 'experiments_2/independent_training/search_space_{}/search-{}-{}-{}-{}'.format(args.search_space,
                                                                                               args.save,
                                                                                               time.strftime(
                                                                                                   "%Y%m%d-%H%M%S"),
@@ -172,7 +172,7 @@ def main():
             valid_acc, valid_obj = infer(valid_queue, model, criterion)
             logging.info('valid_acc %f', valid_acc)
 
-            utils.save(model, os.path.join(args.save, 'weights.pt'))
+            # utils.save(model, os.path.join(args.save, 'weights.pt'))
 
         logging.info('STARTING EVALUATION')
         test, valid, runtime, params = naseval.eval_one_shot_model(config=args.__dict__,

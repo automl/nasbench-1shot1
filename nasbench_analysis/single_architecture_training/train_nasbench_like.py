@@ -27,7 +27,7 @@ from optimizers.darts.genotypes import PRIMITIVES
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--data', type=str, default='../data', help='location of the darts corpus')
 parser.add_argument('--batch_size', type=int, default=256, help='batch size')
-parser.add_argument('--learning_rate', type=float, default=0.2, help='init learning rate')  # Lowered learning rate
+parser.add_argument('--learning_rate', type=float, default=0.2, help='init learning rate')  # Increased learning rate
 parser.add_argument('--learning_rate_min', type=float, default=0, help='min learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=1e-4, help='weight decay')
@@ -55,12 +55,13 @@ parser.add_argument('--warm_start_epochs', type=int, default=0,
                     help='Warm start one-shot model before starting architecture updates.')
 args = parser.parse_args()
 
-args.save = 'experiments/independent_training_nasbench/search_space_{}/search-{}-{}-{}-{}'.format(args.search_space,
-                                                                                                  args.save,
-                                                                                                  time.strftime(
-                                                                                                      "%Y%m%d-%H%M%S"),
-                                                                                                  args.seed,
-                                                                                                  args.search_space)
+args.save = 'experiments_2/independent_training_nasbench/search_space_{}/search-{}-{}-{}-{}'.format(
+    args.search_space,
+    args.save,
+    time.strftime(
+        "%Y%m%d-%H%M%S"),
+    args.seed,
+    args.search_space)
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 # Dump the config of the run

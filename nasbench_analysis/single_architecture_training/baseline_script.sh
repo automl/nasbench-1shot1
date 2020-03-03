@@ -25,7 +25,7 @@ for seed in {100..200}
     do
         # Job to perform
         if [ $gpu_counter -eq $SLURM_ARRAY_TASK_ID ]; then
-           PYTHONPATH=$PWD python nasbench_analysis/single_architecture_training/train.py --seed=${seed} --save=independent --search_space=3 --epochs=50 --layers=3 --init_channels=16
+           PYTHONPATH=$PWD python nasbench_analysis/single_architecture_training/train.py --seed=${seed} --save=independent --search_space=3 --epochs=50 --layers=9 --init_channels=32
            exit $?
         fi
 
