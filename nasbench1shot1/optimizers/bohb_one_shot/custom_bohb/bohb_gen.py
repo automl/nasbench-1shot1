@@ -11,7 +11,6 @@ from copy import deepcopy
 
 from hpbandster.optimizers.config_generators.bohb import BOHB as CG_BOHB
 
-
 class CG_BOHB_CUSTOM(CG_BOHB):
 	def __init__(self, configspace, start_from_default=False, **kwargs):
 		super().__init__(configspace, **kwargs)

@@ -4,14 +4,14 @@ import pickle
 import argparse
 import logging
 
+from nasbench1shot1.optimizers.bohb_one_shot.worker import one_shot_worker as worker
+from nasbench1shot1.core.wrappers import NasbenchWrapper
+
 #from hpbandster.optimizers.bohb import BOHB
-import hpbandster.core.result as hputil
+from nasbench1shot1.optimizers.bohb_one_shot.custom_bohb.bohb import BOHB
 from hpbandster.core.nameserver import NameServer
 from hpbandster.utils import *
-
-from nasbench1shot1.core.wrappers import NasbenchWrapper
-from nasbench1shot1.experiments.bohb_oneshot.custom_bohb.bohb import BOHB
-from nasbench1shot1.experiments.bohb_oneshot.worker import BOHB_Worker
+import hpbandster.core.result as hputil
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s',
@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s',
 parser = argparse.ArgumentParser(description='Run BOHB on CIFAR10 search space.')
 parser.add_argument('--dest_dir', type=str, help='the destination directory. A'
                     ' new subfolder is created for each benchmark/dataset.',
-                    default='./bohb_outputs/')
+                    default='experiments/bohb_one_shot_outputs/')
 parser.add_argument('--num_iterations', type=int, help='number of Hyperband'
                     ' iterations performed.', default=64)
 parser.add_argument('--run_id', type=int, default=0)
@@ -36,8 +36,9 @@ parser.add_argument('--eta', type=int, default=2, help='Multiplicative factor'
                     ' accross budgets.')
 parser.add_argument('--space', type=int, default=1, help='NASBench space')
 parser.add_argument('--algorithm', type=str, default='darts', help='NAS optimizer')
+parser.add_argument('--cs', type=int, default=1, help='config space')
 parser.add_argument('--seed', type=int, default=1, help='Seed')
-parser.add_argument('--unrolled', type=bool, default=True, help='1st'
+parser.add_argument('--unrolled', type=bool, default=False, help='1st'
                     ' or 2nd order')
 parser.add_argument('--nic_name', type=str, default='eth0')
 args = parser.parse_args()
@@ -54,7 +55,7 @@ args.working_directory = os.path.join(
 )
 
 nasbench = NasbenchWrapper(
-    dataset_file='nasbench1shot1/data/nasbench_data/108_e/nasbench_only108.tfrecord'
+    dataset_file='nasbench_analysis/nasbench_data/108_e/nasbench_only108.tfrecord'
 )
 
 if args.array_id == 1:
@@ -66,17 +67,18 @@ if args.array_id == 1:
 
     # BOHB is usually so cheap, that we can 
     # affort to run a worker on the master node, too.
-    worker = BOHB_Worker(min_budget=min_budget,
-                         max_budget=max_budget,
-                         eta=eta,
-                         search_space=args.space,
-                         algorithm=args.algorithm,
-                         nasbench_data=nasbench,
-                         seed=args.seed,
-                         unrolled=args.unrolled,
-                         nameserver=ns_host,
-                         nameserver_port=ns_port,
-                         run_id=args.run_id)
+    worker = worker(min_budget=min_budget,
+                    max_budget=max_budget,
+                    eta=eta,
+                    search_space=args.space,
+                    algorithm=args.algorithm,
+                    nasbench_data=nasbench,
+                    seed=args.seed,
+                    cs=args.cs,
+                    unrolled=args.unrolled,
+                    nameserver=ns_host,
+                    nameserver_port=ns_port,
+                    run_id=args.run_id)
     worker.run(background=True)
 
     #instantiate BOHB and run it
@@ -110,16 +112,17 @@ else:
     time.sleep(30)
     host = nic_name_to_host('eth0')
 
-    worker = BOHB_Worker(min_budget=min_budget,
-                         max_budget=max_budget,
-                         eta=eta,
-                         search_space=args.space,
-                         algorithm=args.algorithm,
-                         nasbench_data=nasbench,
-                         seed=args.seed,
-                         unrolled=args.unrolled,
-                         host=host,
-                         run_id=args.run_id)
+    worker = worker(min_budget=min_budget,
+                    max_budget=max_budget,
+                    eta=eta,
+                    search_space=args.space,
+                    algorithm=args.algorithm,
+                    nasbench_data=nasbench,
+                    seed=args.seed,
+                    cs=args.cs,
+                    unrolled=args.unrolled,
+                    host=host,
+                    run_id=args.run_id)
 
     worker.load_nameserver_credentials(args.working_directory)
     worker.run(background=False)

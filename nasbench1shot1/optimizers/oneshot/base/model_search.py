@@ -64,10 +64,10 @@ class Cell(nn.Module):
         self._input_projections = nn.ModuleList()
         # Number of input channels is dependent on whether it is the first
         # layer or not. Any subsequent layer has
-        # C_in * (steps + 1) input channels because the output is a
+        # C_in * steps input channels because the output is a
         # concatenation of the input tensor and all
         # choice block outputs
-        C_in = C_prev if layer == 0 else C_prev * (steps + 1)
+        C_in = C_prev if layer == 0 else C_prev * steps
 
         # Create the choice block and the input
         for i in range(self._steps):
@@ -120,11 +120,11 @@ class Cell(nn.Module):
             tensor_list = states
         else:
             # Create weighted concatenation at the output of the cell
-            tensor_list = [w * t for w, t in zip(output_weights[0], states)]
+            tensor_list = [w * t for w, t in zip(output_weights[0][1:], states)]
 
         # Concatenate to form output tensor
         # https://github.com/google-research/nasbench/blob/master/nasbench/lib/model_builder.py#L325
-        return torch.cat(tensor_list, dim=1)
+        return output_weights[0][0] * input_to_output_edge + torch.cat(tensor_list, dim=1)
 
 
 class Network(nn.Module):
