@@ -12,9 +12,6 @@ import scipy.stats as stats
 import torch
 import torch.nn.functional as F
 
-from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
-from nasbench1shot1.core.evaluation import get_directory_list
-
 
 INPUT = 'input'
 OUTPUT = 'output'
@@ -30,6 +27,23 @@ def softmax(weights, axis=-1):
 
 def get_top_k(array, k):
     return list(np.argpartition(array[0], -k)[-k:])
+
+
+def get_directory_list(path):
+    """Find directory containing config.json files"""
+    directory_list = []
+    # return nothing if path is a file
+    if os.path.isfile(path):
+        return []
+    # add dir to directorylist if it contains .json files
+    if len([f for f in os.listdir(path) if f == 'config.json' or
+            'sample_val_architecture' in f]) > 0:
+        directory_list.append(path)
+    for d in os.listdir(path):
+        new_path = os.path.join(path, d)
+        if os.path.isdir(new_path):
+            directory_list += get_directory_list(new_path)
+    return directory_list
 
 
 def parent_combinations(adjacency_matrix, node, n_parents=2):
@@ -71,17 +85,6 @@ def upscale_to_nasbench_format(adjacency_matrix):
         5, [0, 0, 0, 0, 0, 0, 0], axis=0)
 
 
-def search_space_id_to_obj(id):
-    if int(id) == 1:
-        return SearchSpace1()
-    elif int(id) == 2:
-        return SearchSpace2()
-    elif int(id) == 3:
-        return SearchSpace3()
-    else:
-        raise ValueError('Search space unknown.')
-
-
 def parse_log(path):
     f = open(os.path.join(path, 'log.txt'), 'r')
     # Read in the relevant information
@@ -106,25 +109,6 @@ def parse_log(path):
     ]
 
     return valid_error, train_error
-
-
-def get_key_from_scalar_configs(configs, key):
-    metrics_to_stack = [list(config['scalars'][key]) for config in configs]
-    shortest_metric = min([len(m) for m in metrics_to_stack])
-
-    if 'validation_errors' == key or 'test_errors' == key:
-        search_space = search_space_id_to_obj(configs[0]['search_space'])
-        if 'test' in key:
-            minimum = search_space.test_min_error
-        elif 'valid' in key:
-            minimum = search_space.valid_min_error
-        else:
-            raise ValueError('incorrect name in key')
-    else:
-        minimum = 0
-
-    return np.mean(np.stack([metric[:shortest_metric] for metric in
-                             metrics_to_stack], axis=0), axis=-1) - minimum
 
 
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside

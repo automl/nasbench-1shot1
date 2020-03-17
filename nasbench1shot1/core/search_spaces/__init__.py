@@ -1,3 +1,0 @@
-from nasbench1shot1.core.search_spaces.search_space_1 import SearchSpace1
-from nasbench1shot1.core.search_spaces.search_space_2 import SearchSpace2
-from nasbench1shot1.core.search_spaces.search_space_3 import SearchSpace3

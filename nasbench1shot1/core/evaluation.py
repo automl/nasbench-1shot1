@@ -6,26 +6,12 @@ import pickle
 import numpy as np
 from nasbench import api
 
-from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.core.search_spaces.search_space_1 import SearchSpace1
+from nasbench1shot1.core.search_spaces.search_space_2 import SearchSpace2
+from nasbench1shot1.core.search_spaces.search_space_3 import SearchSpace3
 from nasbench1shot1.core.utils import get_top_k, INPUT, OUTPUT, CONV1X1, natural_keys, softmax
-from nasbench1shot1.core.wrappers import PRIMITIVES, NasbenchWrapper
-
-
-def get_directory_list(path):
-    """Find directory containing config.json files"""
-    directory_list = []
-    # return nothing if path is a file
-    if os.path.isfile(path):
-        return []
-    # add dir to directorylist if it contains .json files
-    if len([f for f in os.listdir(path) if f == 'config.json' or
-            'sample_val_architecture' in f]) > 0:
-        directory_list.append(path)
-    for d in os.listdir(path):
-        new_path = os.path.join(path, d)
-        if os.path.isdir(new_path):
-            directory_list += get_directory_list(new_path)
-    return directory_list
+from nasbench1shot1.core.wrappers import NasbenchWrapper
+from nasbench1shot1.optimizers.oneshot.base.operations import PRIMITIVES
 
 
 def eval_directory(path, nasbench, optimizer, basename='one_shot_architecture_*.obj'):

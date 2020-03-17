@@ -15,6 +15,9 @@ import torch.utils
 import torchvision.datasets as dset
 
 from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.core.search_spaces.search_space_1 import SearchSpace1
+from nasbench1shot1.core.search_spaces.search_space_2 import SearchSpace2
+from nasbench1shot1.core.search_spaces.search_space_3 import SearchSpace3
 from nasbench1shot1.optimizers.oneshot.base import utils
 # Use DARTS Architecture optimizer
 from nasbench1shot1.optimizers.oneshot.base.architect import Architect

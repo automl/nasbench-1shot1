@@ -3,7 +3,7 @@ import json
 import logging
 
 from nasbench1shot1.optimizers.oneshot.darts.searcher import DARTSWrapper
-from nasbench1shot1.optimizers.oneshot.base import Architect
+from nasbench1shot1.optimizers.oneshot.base.architect import Architect
 
 
 class DARTS(object):

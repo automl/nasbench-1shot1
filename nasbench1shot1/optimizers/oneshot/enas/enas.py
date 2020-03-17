@@ -10,7 +10,9 @@ import time
 import numpy as np
 import torch
 
-from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
+from nasbench1shot1.core.search_spaces.search_space_1 import SearchSpace1
+from nasbench1shot1.core.search_spaces.search_space_2 import SearchSpace2
+from nasbench1shot1.core.search_spaces.search_space_3 import SearchSpace3
 from nasbench1shot1.optimizers.oneshot.enas.enas_child import ENASChild
 from nasbench1shot1.optimizers.oneshot.enas.micro_controller import Controller
 

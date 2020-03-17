@@ -9,7 +9,7 @@ from nasbench import api
 
 from nasbench1shot1.core.utils import CONV1X1, CONV3X3, MAXPOOL3X3, INPUT, OUTPUT, upscale_to_nasbench_format
 from nasbench1shot1.core.utils import parent_combinations as parent_combinations_old
-from nasbench1shot1.optimizers.darts.genotypes import PRIMITIVES
+from nasbench1shot1.optimizers.oneshot.base.operations import PRIMITIVES
 
 
 def parent_combinations(node, num_parents):
@@ -19,7 +19,7 @@ def parent_combinations(node, num_parents):
         return list(itertools.combinations(list(range(int(node))), num_parents))
 
 
-class SearchSpace:
+class SearchSpace(object):
     def __init__(self, search_space_number, num_intermediate_nodes):
         self.search_space_number = search_space_number
         self.num_intermediate_nodes = num_intermediate_nodes
@@ -34,6 +34,7 @@ class SearchSpace:
     def create_nasbench_adjacency_matrix(self, parents, **kwargs):
         """Based on given connectivity pattern create the corresponding adjacency matrix."""
         pass
+
 
     def sample(self, with_loose_ends, upscale=True):
         if with_loose_ends:

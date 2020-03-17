@@ -114,7 +114,7 @@ class Cell(nn.Module):
         # Add projected input to the state
         # https://github.com/google-research/nasbench/blob/master/nasbench/lib/model_builder.py#L328
         states.insert(0, self._input_projections[-1](s0))
-        assert (len(input_weights) == 0, 'Something went wrong here.')
+        assert len(input_weights) == 0, 'Something went wrong here.'
 
         if output_weights is None:
             tensor_list = states
@@ -207,7 +207,7 @@ class Network(nn.Module):
 
             # Normalize the output weights
             output_weights = self._preprocess_op(
-                self._arch_parameters[1], discrete, normalize) if
+                self._arch_parameters[1], discrete, normalize) if \
             self._output_weights else None
 
             # Normalize the input weights for the nodes in the cell
