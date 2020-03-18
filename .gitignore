@@ -110,6 +110,7 @@ data/
 *.obj
 *bohb_output
 logs/
+nasbench1shot1/version.py
 
 # Swap
 [._]*.s[a-v][a-z]
