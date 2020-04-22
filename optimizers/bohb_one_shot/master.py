@@ -38,7 +38,7 @@ parser.add_argument('--space', type=int, default=1, help='NASBench space')
 parser.add_argument('--algorithm', type=str, default='darts', help='NAS optimizer')
 parser.add_argument('--cs', type=int, default=1, help='config space')
 parser.add_argument('--seed', type=int, default=1, help='Seed')
-parser.add_argument('--unrolled', type=bool, default=True, help='1st'
+parser.add_argument('--unrolled', type=bool, default=False, help='1st'
                     ' or 2nd order')
 parser.add_argument('--nic_name', type=str, default='eth0')
 args = parser.parse_args()
