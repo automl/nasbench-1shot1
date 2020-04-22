@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 VERBOSE_SCRIPT = True
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-version = open('version.txt', 'r').read().strip()
+version = open('.version', 'r').read().strip()
 
 if VERBOSE_SCRIPT:
     def report(*args):
@@ -13,7 +13,7 @@ else:
     def report(*args):
         pass
 
-version_path = os.path.join(cwd, 'nasbench1shot1', 'version.py')
+version_path = os.path.join(cwd, 'nasbench1shot1', '__init__.py')
 with open(version_path, 'w') as f:
     report('-- Building version ' + version)
     f.write("__version__ = '{}'\n".format(version))

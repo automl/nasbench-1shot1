@@ -31,7 +31,7 @@ class OneShotModelWrapper(object):
         if not os.path.exists(config_path):
             with open(config_path, 'w') as fp:
                 json.dump(args.__dict__, fp)
-        self.seed = seed
+        self.seed = args.seed
 
         np.random.seed(args.seed)
         random.seed(args.seed)

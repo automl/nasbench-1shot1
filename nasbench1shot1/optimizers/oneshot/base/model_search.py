@@ -79,7 +79,8 @@ class Cell(nn.Module):
 
         # Add one more input preprocessing for edge from input to output of the
         # cell
-        self._input_projections.append(ConvBnRelu(C_in=C_in, C_out=C,
+        self._input_projections.append(ConvBnRelu(C_in=C_in,
+                                                  C_out=C * self._steps,
                                                   kernel_size=1, stride=1,
                                                   padding=0))
 
@@ -113,7 +114,7 @@ class Cell(nn.Module):
 
         # Add projected input to the state
         # https://github.com/google-research/nasbench/blob/master/nasbench/lib/model_builder.py#L328
-        states.insert(0, self._input_projections[-1](s0))
+        input_to_output_edge = self._input_projections[-1](s0)
         assert len(input_weights) == 0, 'Something went wrong here.'
 
         if output_weights is None:
@@ -156,7 +157,7 @@ class Network(nn.Module):
                         search_space=search_space)
             self.cells += [cell]
             C_prev = C_curr
-        self.postprocess = ReLUConvBN(C_in=C_prev * (self._steps + 1),
+        self.postprocess = ReLUConvBN(C_in=C_prev * self._steps,
                                       C_out=C_curr, kernel_size=1, stride=1,
                                       padding=0, affine=False)
 

@@ -2,28 +2,23 @@ import os
 import sys
 import time
 import argparse
+import logging
 import json
 import numpy as np
 
 from nasbench1shot1.core.search_spaces import SearchSpace1, SearchSpace2, SearchSpace3
 from nasbench1shot1.optimizers.oneshot import RandomNAS
+from nasbench1shot1.experiments.benchmark.make_parser import config_reader
 
 
-def main(args):
-    # Fill in with root output path
-    root_dir = os.getcwd()
-    print('root_dir', root_dir)
-    if args.save_dir is None:
-        save_dir = os.path.join(
-            root_dir,
-            'experiments/random_ws/ss_{}_{}_{}'.format(
-                time.strftime("%Y%m%d-%H%M%S"),
-                args.search_space,
-                args.seed
-            )
-        )
-    else:
-        save_dir = args.save_dir
+def main(_args):
+    #TODO: move this to the searchers
+    args = config_reader(
+        '/home/zelaa/nasbench-1shot1/nasbench1shot1/configs/default.yaml'
+    )
+    args.__dict__.update(_args.__dict__)
+
+    save_dir = args.save
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     if args.eval_only:
@@ -41,8 +36,7 @@ def main(args):
     logging.getLogger().addHandler(fh)
     logging.info(args)
 
-    search_space = eval('SearchSpace{}'.format(args.search_space))
-
+    search_space = eval('SearchSpace{}()'.format(args.search_space))
     searcher = RandomNAS(args, search_space, save_dir)
 
     logging.info('budget: %d' % (searcher.B))
@@ -76,8 +70,7 @@ if __name__ == "__main__":
     parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
     parser.add_argument('--data_size', dest='data_size', type=int, default=25000)
     parser.add_argument('--time_steps', dest='time_steps', type=int, default=1)
+    _args = parser.parse_args()
 
-    args = parser.parse_args()
-
-    main(args)
+    main(_args)
 

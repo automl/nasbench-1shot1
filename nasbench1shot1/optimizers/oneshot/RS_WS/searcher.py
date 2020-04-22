@@ -42,7 +42,7 @@ class RandomNASWrapper(OneShotModelWrapper):
         self.top1.update(prec1.data.item(), n)
         self.top5.update(prec5.data.item(), n)
 
-        if step % args.report_freq == 0:
+        if step % self.args.report_freq == 0:
             logging.info('train %03d %e %f %f', step, self.objs.avg, self.top1.avg, self.top5.avg)
 
         self.steps += 1

@@ -36,7 +36,7 @@ class ArchitectGDAS(Architect):
              zip(torch.autograd.grad(loss, self.model.parameters(), allow_unused=True), self.model.parameters())])
 
         try:
-            moment = _concat(network_optimizer.state[v]['momentum_buffer'] for v in self.model.parameters()).musl_(
+            moment = _concat(network_optimizer.state[v]['momentum_buffer'] for v in self.model.parameters()).mul_(
                 self.network_momentum)
         except:
             moment = torch.zeros_like(dtheta)
